@@ -48,9 +48,12 @@ const CALENDAR = [
 ];
 
 const TASKS = [
-  { time: "09:00 AM", tag: "HIGH PRIORITY", tagType: "high",     title: "CEO Briefing",          desc: "Strategic alignment and quarterly goals review with the executive board." },
-  { time: "11:30 AM", tag: "ROUTINE",       tagType: "routine",  title: "Ticket #4492 Audit",    desc: "Compliance check for high-value customer support interaction." },
-  { time: "02:00 PM", tag: "INTERNAL",      tagType: "internal", title: "PT Performance Review", desc: "Monthly evaluation of Lead PT Elena Vance's operational metrics." },
+  { time: "09:00 AM", tag: "HIGH PRIORITY", tagType: "high",     title: "CEO Briefing",           desc: "Strategic alignment and quarterly goals review with the executive board." },
+  { time: "11:30 AM", tag: "ROUTINE",       tagType: "routine",  title: "Ticket #4492 Audit",     desc: "Compliance check for high-value customer support interaction." },
+  { time: "02:00 PM", tag: "INTERNAL",      tagType: "internal", title: "PT Performance Review",  desc: "Monthly evaluation of Lead PT Elena Vance's operational metrics." },
+  { time: "04:00 PM", tag: "HIGH PRIORITY", tagType: "high",     title: "Client Escalation Call", desc: "Urgent follow-up with customer Priya Mehta regarding trainer conduct complaint." },
+  { time: "05:30 PM", tag: "ROUTINE",       tagType: "routine",  title: "Schedule Sync",          desc: "Weekly trainer availability alignment and session slot reallocation." },
+  { time: "07:00 PM", tag: "INTERNAL",      tagType: "internal", title: "Ops Report Submission",  desc: "End-of-day operational summary and KPI log submission to command." },
 ];
 
 export default function SchedulesPage() {
@@ -141,21 +144,26 @@ export default function SchedulesPage() {
           ))}
         </div>
 
-        {/* Personnel Alerts */}
+        {/* Trainers List */}
         <div className={styles.section}>
-          <p className={styles.sectionTitle}>PERSONAL ALERTS</p>
+          <p className={styles.sectionTitle}>TRAINERS</p>
           {[
-            { level: "CRITICAL", type: "critical", ago: "2h ago", name: "Julian Vance",      issue: "Retention Risk"     },
-            { level: "HIGH",     type: "high",     ago: "4h ago", name: "Alistair Sterling", issue: "Support Escalation" },
-            { level: "MEDIUM",   type: "medium",   ago: "6h ago", name: "Evelyn Cross",      issue: "Schedule Conflict"  },
-          ].map((a) => (
-            <div key={a.name} className={styles.alertItem}>
-              <div className={styles.alertTop}>
-                <span className={`${styles.alertBadge} ${styles[`badge_${a.type}`]}`}>{a.level}</span>
-                <span className={styles.alertAgo}>{a.ago}</span>
+            { init: "JV", name: "Julian Vance",    role: "Elite Trainer", online: true  },
+            { init: "AS", name: "Alistair Sterling",role: "Elite Trainer", online: true  },
+            { init: "EC", name: "Evelyn Cross",    role: "Pro Trainer",   online: false },
+            { init: "MT", name: "Marcus Thorne",   role: "Elite Trainer", online: true  },
+            { init: "RK", name: "Ravi Kumar",      role: "Pro Trainer",   online: false },
+            { init: "SD", name: "Sara Devi",       role: "Trainer",       online: true  },
+          ].map((t) => (
+            <div key={t.name} className={styles.trainerRow}>
+              <div className={styles.memberWrap}>
+                <div className={styles.memberAvatar}>{t.init}</div>
+                <span className={`${styles.onlineDot} ${t.online ? styles.dotGreen : styles.dotGray}`} />
               </div>
-              <p className={styles.alertName}>{a.name}</p>
-              <p className={styles.alertIssue}>{a.issue}</p>
+              <div>
+                <p className={styles.memberName}>{t.name}</p>
+                <p className={styles.memberSub}>{t.role} · {t.online ? "Online" : "Offline"}</p>
+              </div>
             </div>
           ))}
         </div>
@@ -166,12 +174,19 @@ export default function SchedulesPage() {
         <header className={styles.topBar}>
           <div className={styles.topActions}>
             <button className={styles.iconBtn} aria-label="Notifications">
-              <svg width="20" height="20" viewBox="0 0 24 24" fill="none">
-                <path d="M18 8a6 6 0 0 0-12 0c0 7-3 9-3 9h18s-3-2-3-9" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
-                <path d="M13.73 21a2 2 0 0 1-3.46 0" stroke="currentColor" strokeWidth="2"/>
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none">
+                <path d="M18 8a6 6 0 0 0-12 0c0 7-3 9-3 9h18s-3-2-3-9" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"/>
+                <path d="M13.73 21a2 2 0 0 1-3.46 0" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round"/>
               </svg>
             </button>
-            <div className={styles.userChip} onClick={() => router.push("/dashboard")}>EM</div>
+            <button className={styles.logout} onClick={() => router.push("/")}>
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none">
+                <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round"/>
+                <polyline points="16 17 21 12 16 7" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"/>
+                <line x1="21" y1="12" x2="9" y2="12" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round"/>
+              </svg>
+              Logout
+            </button>
           </div>
         </header>
 
@@ -179,8 +194,16 @@ export default function SchedulesPage() {
           <div className={styles.calHeader}>
             <h2 className={styles.monthTitle}>October 2024</h2>
             <div className={styles.navBtns}>
-              <button className={styles.navBtn}>&#8249;</button>
-              <button className={styles.navBtn}>&#8250;</button>
+              <button className={styles.navBtn} aria-label="Previous">
+                <svg width="13" height="13" viewBox="0 0 24 24" fill="none">
+                  <polyline points="15 18 9 12 15 6" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round"/>
+                </svg>
+              </button>
+              <button className={styles.navBtn} aria-label="Next">
+                <svg width="13" height="13" viewBox="0 0 24 24" fill="none">
+                  <polyline points="9 18 15 12 9 6" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round"/>
+                </svg>
+              </button>
             </div>
           </div>
 
@@ -233,7 +256,7 @@ export default function SchedulesPage() {
             </div>
             <div className={styles.taskGrid}>
               {TASKS.map((t) => (
-                <div key={t.title} className={styles.taskCard}>
+                <div key={t.title} className={`${styles.taskCard} ${styles[`card_${t.tagType}`]}`}>
                   <div className={styles.taskTop}>
                     <span className={styles.taskTime}>{t.time}</span>
                     <span className={`${styles.taskTag} ${styles[`tag_${t.tagType}`]}`}>{t.tag}</span>

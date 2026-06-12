@@ -5,36 +5,40 @@ import { useRouter } from "next/navigation";
 import Sidebar from "@/components/Sidebar";
 import styles from "./page.module.css";
 
-const CHART_DATA = {
+const Y = "rgba(248,227,150,";
+
+const CHART = {
   "7D": {
-    line: "M 0,170 C 80,168 130,158 190,140 C 250,122 270,96 310,68 C 350,40 385,22 430,15 C 475,9 548,8 600,8",
-    labels: ["MON", "TUE", "WED", "THU", "FRI", "SAT", "SUN"],
+    line: "M 0,185 C 70,183 110,178 150,168 C 200,155 240,118 295,62 C 340,20 390,14 450,12 C 510,10 560,10 600,10",
+    labels: ["SEP 01", "SEP 08", "SEP 15", "SEP 22", "SEP 30"],
   },
   "1M": {
-    line: "M 0,160 C 60,158 100,150 160,136 C 220,122 248,100 285,74 C 322,48 362,28 412,18 C 462,10 535,8 600,8",
-    labels: ["WK 1", "WK 2", "WK 3", "WK 4"],
-  },
-  "1Y": {
-    line: "M 0,175 C 50,172 90,165 150,150 C 210,135 240,115 280,90 C 320,65 360,40 410,24 C 460,12 535,8 600,8",
-    labels: ["JAN", "MAR", "MAY", "JUL", "SEP", "NOV"],
+    line: "M 0,188 C 60,186 100,182 155,172 C 215,158 250,130 300,90 C 350,50 400,24 455,16 C 505,10 560,9 600,9",
+    labels: ["SEP 01", "SEP 08", "SEP 15", "SEP 22", "SEP 30"],
   },
 };
 
-function PerformanceChart({ period }) {
-  const { line: linePath, labels } = CHART_DATA[period];
-  const fillPath = `${linePath} L 600,200 L 0,200 Z`;
+const GRID_Y = [40, 80, 120, 160, 200];
 
+function Chart({ period }) {
+  const { line, labels } = CHART[period];
+  const fill = `${line} L 600,210 L 0,210 Z`;
   return (
-    <div className={styles.chartWrapper}>
-      <svg viewBox="0 0 600 200" preserveAspectRatio="none" className={styles.chartSvg}>
+    <div className={styles.chartWrap}>
+      <svg viewBox="0 0 600 210" preserveAspectRatio="none" className={styles.svg}>
         <defs>
-          <linearGradient id="areaGrad" x1="0" y1="0" x2="0" y2="1">
-            <stop offset="0%" stopColor="#f8e396" stopOpacity="0.35" />
-            <stop offset="100%" stopColor="#f8e396" stopOpacity="0" />
+          <linearGradient id="g" x1="0" y1="0" x2="0" y2="1">
+            <stop offset="0%"   stopColor="#F8E396" stopOpacity="0.18" />
+            <stop offset="100%" stopColor="#F8E396" stopOpacity="0.00" />
           </linearGradient>
         </defs>
-        <path d={fillPath} fill="url(#areaGrad)" />
-        <path d={linePath} fill="none" stroke="#f8e396" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" />
+        {GRID_Y.map((y) => (
+          <line key={y} x1="0" y1={y} x2="600" y2={y}
+            stroke="rgba(248,227,150,0.06)" strokeWidth="1" />
+        ))}
+        <path d={fill} fill="url(#g)" />
+        <path d={line} fill="none" stroke="#F8E396" strokeWidth="2"
+          strokeLinecap="round" strokeLinejoin="round" />
       </svg>
       <div className={styles.xAxis}>
         {labels.map((l) => <span key={l}>{l}</span>)}
@@ -48,87 +52,105 @@ export default function DashboardPage() {
   const [period, setPeriod] = useState("7D");
 
   return (
-    <div className={styles.layout}>
+    <div className={styles.page}>
       <Sidebar />
 
-      <main className={styles.main}>
-        <header className={styles.topBar}>
-          <div className={styles.topBarActions}>
-            <button className={styles.iconBtn} aria-label="Notifications">
-              <svg width="20" height="20" viewBox="0 0 24 24" fill="none">
-                <path d="M18 8a6 6 0 0 0-12 0c0 7-3 9-3 9h18s-3-2-3-9" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
-                <path d="M13.73 21a2 2 0 0 1-3.46 0" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
-              </svg>
-            </button>
-            <button className={styles.logoutBtn} onClick={() => router.push("/")}>
-              <svg width="16" height="16" viewBox="0 0 24 24" fill="none">
-                <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
-                <polyline points="16 17 21 12 16 7" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
-                <line x1="21" y1="12" x2="9" y2="12" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
-              </svg>
-              Logout
-            </button>
-          </div>
-        </header>
+      <div className={styles.mainCol}>
 
-        <div className={styles.content}>
-          <h1 className={styles.pageTitle}>MENTOR DASHBOARD</h1>
-          <p className={styles.pageSubtitle}>
-            Empowering PT Success Through Guidance &amp; Performance Insights
-          </p>
+      {/* Top bar */}
+      <header className={styles.topBar}>
+        <button className={styles.bell} aria-label="Notifications">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none">
+            <path d="M18 8a6 6 0 0 0-12 0c0 7-3 9-3 9h18s-3-2-3-9"
+              stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" />
+            <path d="M13.73 21a2 2 0 0 1-3.46 0"
+              stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" />
+          </svg>
+        </button>
+        <button className={styles.logout} onClick={() => router.push("/")}>
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none">
+            <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"
+              stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" />
+            <polyline points="16 17 21 12 16 7"
+              stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" />
+            <line x1="21" y1="12" x2="9" y2="12"
+              stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" />
+          </svg>
+          Logout
+        </button>
+      </header>
 
-          <div className={styles.statsRow1}>
+      <div className={styles.content}>
+
+        {/* Heading */}
+        <h1 className={styles.title}>MENTOR DASHBOARD</h1>
+        <p className={styles.subtitle}>
+          Empowering PT Success Through Guidance &amp; Performance Insights
+        </p>
+
+        {/* Stats — single connected block */}
+        <div className={styles.statsWrap}>
+          {/* Row 1 — 4 columns */}
+          <div className={styles.row1}>
             {[
-              { label: "Total Assigned PTs", value: "24" },
-              { label: "Active PTs", value: "18", bar: true },
-              { label: "At-Risk PTs", value: "3" },
-              { label: "Clients Managed", value: "482" },
+              { label: "Total Assigned PTs", value: "24",  link: "/pt-dashboard" },
+              { label: "Active PTs",          value: "18", bar: true },
+              { label: "At-Risk PTs",         value: "3"  },
+              { label: "Clients Managed",     value: "482"},
             ].map((s) => (
-              <div key={s.label} className={styles.statCard}>
+              <div
+                key={s.label}
+                className={`${styles.cellTop} ${s.link ? styles.cellClickable : ""}`}
+                onClick={() => s.link && router.push(s.link)}
+              >
                 <p className={styles.statLabel}>{s.label}</p>
                 <p className={styles.statValue}>{s.value}</p>
-                {s.bar && (
-                  <div className={styles.statBar}>
-                    <div className={styles.statBarFill} />
-                  </div>
-                )}
+                {s.bar && <div className={styles.underBar} />}
               </div>
             ))}
           </div>
-
-          <div className={styles.statsRow2}>
+          {/* Row 2 — 3 columns */}
+          <div className={styles.row2}>
             {[
-              { label: "Avg Feedback Score", value: "4.8" },
-              { label: "Upcoming Check-Ins", value: "12" },
+              { label: "Avg Feedback Score",       value: "4.8",   link: "/trainer-review" },
+              { label: "Upcoming Check-ins",        value: "12"    },
               { label: "Monthly Operational Hours", value: "1,240" },
             ].map((s) => (
-              <div key={s.label} className={styles.statCard}>
+              <div
+                key={s.label}
+                className={`${styles.cellBot} ${s.link ? styles.cellClickable : ""}`}
+                onClick={() => s.link && router.push(s.link)}
+              >
                 <p className={styles.statLabel}>{s.label}</p>
                 <p className={styles.statValue}>{s.value}</p>
               </div>
             ))}
           </div>
-
-          <div className={styles.chartCard}>
-            <div className={styles.chartHeader}>
-              <div>
-                <h2 className={styles.chartTitle}>PERFORMANCE TRAJECTORY</h2>
-                <p className={styles.chartSubtitle}>Growth &amp; feedback resonance analysis.</p>
-              </div>
-              <div className={styles.periodToggle}>
-                {["7D", "1M", "1Y"].map((p) => (
-                  <button
-                    key={p}
-                    className={period === p ? styles.periodBtnActive : styles.periodBtn}
-                    onClick={() => setPeriod(p)}
-                  >{p}</button>
-                ))}
-              </div>
-            </div>
-            <PerformanceChart period={period} />
-          </div>
         </div>
-      </main>
+
+        {/* Chart */}
+        <div className={styles.chartCard}>
+          <div className={styles.chartHead}>
+            <div>
+              <p className={styles.chartTitle}>PERFORMANCE TRAJECTORY</p>
+              <p className={styles.chartSub}>Growth &amp; feedback resonance analysis.</p>
+            </div>
+            <div className={styles.toggle}>
+              {["7D", "1M"].map((p) => (
+                <button
+                  key={p}
+                  className={period === p ? styles.toggleActive : styles.toggleBtn}
+                  onClick={() => setPeriod(p)}
+                >{p}</button>
+              ))}
+            </div>
+          </div>
+          <Chart period={period} />
+        </div>
+
+      </div>
+
+      </div>
     </div>
   );
 }

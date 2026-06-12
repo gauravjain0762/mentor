@@ -1,0 +1,293 @@
+"use client";
+
+import { useState } from "react";
+import { useRouter } from "next/navigation";
+import Sidebar from "@/components/Sidebar";
+import styles from "./page.module.css";
+
+const TRAINERS = [
+  {
+    name: "Julian Vance",
+    tier: "Elite Tier Trainer",
+    gym: "Nexus Central Hub",
+    location: "London, UK",
+    initials: "JV",
+    activeClients: 42,
+    newClients: 5,
+    retention: 78,
+    rating: 4.2,
+    aiScore: 62,
+    status: "warning",
+  },
+  {
+    name: "Alistair Sterling",
+    tier: "Elite Tier Trainer",
+    gym: "Nexus South Hub",
+    location: "London, UK",
+    initials: "AS",
+    activeClients: 38,
+    newClients: 4,
+    retention: 82,
+    rating: 4.5,
+    aiScore: 78,
+    status: "healthy",
+  },
+  {
+    name: "Evelyn Cross",
+    tier: "Pro Tier Trainer",
+    gym: "Vanguard East",
+    location: "Manchester, UK",
+    initials: "EC",
+    activeClients: 25,
+    newClients: 2,
+    retention: 65,
+    rating: 3.8,
+    aiScore: 52,
+    status: "critical",
+  },
+  {
+    name: "Marcus Thorne",
+    tier: "Elite Tier Trainer",
+    gym: "Obsidian West",
+    location: "London, UK",
+    initials: "MT",
+    activeClients: 42,
+    newClients: 6,
+    retention: 88,
+    rating: 4.9,
+    aiScore: 91,
+    status: "healthy",
+  },
+];
+
+function RetentionBar({ pct }) {
+  const color = pct >= 85 ? "#22c55e" : pct >= 75 ? "#f8e396" : pct >= 65 ? "#ffaa44" : "#ff6b6b";
+  return (
+    <div className={styles.retBar}>
+      <div className={styles.retFill} style={{ width: `${pct}%`, background: color }} />
+      <span className={styles.retLabel} style={{ color }}>{pct}%</span>
+    </div>
+  );
+}
+
+function Stars({ rating }) {
+  return (
+    <div className={styles.stars}>
+      <svg width="13" height="13" viewBox="0 0 24 24" fill="#f8e396">
+        <polygon points="12,2 15.09,8.26 22,9.27 17,14.14 18.18,21.02 12,17.77 5.82,21.02 7,14.14 2,9.27 8.91,8.26" />
+      </svg>
+      <span className={styles.ratingVal}>{rating}</span>
+    </div>
+  );
+}
+
+function ScoreBadge({ score }) {
+  const color = score >= 85 ? "#22c55e" : score >= 70 ? "#f8e396" : score >= 55 ? "#ffaa44" : "#ff6b6b";
+  const bg    = score >= 85 ? "#0d2a1a" : score >= 70 ? "#2a2400" : score >= 55 ? "#2a1600" : "#2a0a0a";
+  return (
+    <div className={styles.scoreBadge} style={{ background: bg, borderColor: color }}>
+      <span className={styles.scoreLabel} style={{ color }}>Score:</span>
+      <span className={styles.scoreVal} style={{ color }}>{score}</span>
+    </div>
+  );
+}
+
+export default function PTDashboardPage() {
+  const router = useRouter();
+  const [search, setSearch] = useState("");
+  const [page, setPage] = useState(1);
+
+  const filtered = TRAINERS.filter(
+    (t) =>
+      t.name.toLowerCase().includes(search.toLowerCase()) ||
+      t.gym.toLowerCase().includes(search.toLowerCase())
+  );
+
+  return (
+    <div className={styles.layout}>
+      <Sidebar />
+
+      <main className={styles.main}>
+        {/* Top bar */}
+        <header className={styles.topBar}>
+          <div className={styles.searchWrap}>
+            <svg className={styles.searchIcon} width="14" height="14" viewBox="0 0 24 24" fill="none">
+              <circle cx="11" cy="11" r="7" stroke="currentColor" strokeWidth="2" />
+              <line x1="16.5" y1="16.5" x2="22" y2="22" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
+            </svg>
+            <input
+              className={styles.searchInput}
+              placeholder="Search Elite Personnel..."
+              value={search}
+              onChange={(e) => setSearch(e.target.value)}
+            />
+          </div>
+          <div className={styles.topActions}>
+            <button className={styles.iconBtn} aria-label="Notifications">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none">
+                <path d="M18 8a6 6 0 0 0-12 0c0 7-3 9-3 9h18s-3-2-3-9" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" />
+                <path d="M13.73 21a2 2 0 0 1-3.46 0" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" />
+              </svg>
+            </button>
+            <button className={styles.logout} onClick={() => router.push("/")}>
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none">
+                <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round"/>
+                <polyline points="16 17 21 12 16 7" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"/>
+                <line x1="21" y1="12" x2="9" y2="12" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round"/>
+              </svg>
+              Logout
+            </button>
+          </div>
+        </header>
+
+        <div className={styles.content}>
+          {/* Page heading */}
+          <div className={styles.pageHead}>
+            <div>
+              <h1 className={styles.pageTitle}>Assigned PT&apos;S</h1>
+              <p className={styles.pageSubtitle}>
+                Active personal trainer performance matrix and risk assessment<br />
+                dashboard for <span className={styles.hiYellow}>high-command</span> oversight.
+              </p>
+            </div>
+            <div className={styles.headActions}>
+              <button className={styles.onboardBtn}>
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none">
+                  <circle cx="12" cy="12" r="9" stroke="currentColor" strokeWidth="2" />
+                  <line x1="12" y1="8" x2="12" y2="16" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
+                  <line x1="8" y1="12" x2="16" y2="12" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
+                </svg>
+                ONBOARD NEW PT
+              </button>
+              <button className={styles.filterBtn}>
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none">
+                  <line x1="4" y1="6" x2="20" y2="6" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
+                  <line x1="7" y1="12" x2="17" y2="12" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
+                  <line x1="10" y1="18" x2="14" y2="18" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
+                </svg>
+                FILTERS
+              </button>
+            </div>
+          </div>
+
+          {/* Stats */}
+          <div className={styles.statsRow}>
+            <div className={`${styles.statCard} ${styles.statDefault}`}>
+              <p className={styles.statLabel}>TOTAL PERSONNEL</p>
+              <div className={styles.statValueRow}>
+                <span className={styles.statValue}>142</span>
+                <span className={styles.statDelta}>+12% vs LY</span>
+              </div>
+            </div>
+            <div className={`${styles.statCard} ${styles.statGreen}`}>
+              <p className={styles.statLabel}>HEALTHY STATUS</p>
+              <div className={styles.statValueRow}>
+                <span className={styles.statValue}>128</span>
+                <span className={styles.statSub}>Personnel Clear</span>
+              </div>
+            </div>
+            <div className={`${styles.statCard} ${styles.statYellow}`}>
+              <p className={styles.statLabel}>WARNINGS</p>
+              <div className={styles.statValueRow}>
+                <span className={styles.statValue}>9</span>
+                <span className={styles.statSub}>Intervention Required</span>
+              </div>
+            </div>
+            <div className={`${styles.statCard} ${styles.statRed}`}>
+              <p className={styles.statLabel}>CRITICAL ALERTS</p>
+              <div className={styles.statValueRow}>
+                <span className={styles.statValue}>5</span>
+                <span className={styles.statSub}>Escalate Immediately</span>
+              </div>
+            </div>
+          </div>
+
+          {/* Table */}
+          <div className={styles.tableWrap}>
+            <table className={styles.table}>
+              <thead>
+                <tr className={styles.thead}>
+                  <th className={styles.th}>TRAINER PROFILE</th>
+                  <th className={styles.th}>GYM / LOCATION</th>
+                  <th className={styles.th}>ACTIVE CLIENTS</th>
+                  <th className={styles.th}>NEW CLIENTS THIS MONTH</th>
+                  <th className={styles.th}>RETENTION %</th>
+                  <th className={styles.th}>AVG RATING</th>
+                  <th className={styles.th}>AI CONSULTATION</th>
+                  <th className={styles.th}>STATUS</th>
+                  <th className={styles.th}>ACTIONS</th>
+                </tr>
+              </thead>
+              <tbody>
+                {filtered.map((t) => (
+                  <tr key={t.name} className={styles.trow}>
+                    <td className={styles.td}>
+                      <div className={styles.profileCell}>
+                        <div className={`${styles.avatar} ${styles[`av_${t.status}`]}`}>{t.initials}</div>
+                        <div>
+                          <p className={styles.trainerName}>{t.name}</p>
+                          <p className={styles.trainerTier}>{t.tier}</p>
+                        </div>
+                      </div>
+                    </td>
+                    <td className={styles.td}>
+                      <p className={styles.gymName}>{t.gym}</p>
+                      <p className={styles.gymLoc}>{t.location}</p>
+                    </td>
+                    <td className={`${styles.td} ${styles.tdCenter}`}>
+                      <span className={styles.clientNum}>{t.activeClients}</span>
+                    </td>
+                    <td className={`${styles.td} ${styles.tdCenter}`}>
+                      <span className={styles.newClient}>+{t.newClients}</span>
+                    </td>
+                    <td className={styles.td}>
+                      <RetentionBar pct={t.retention} />
+                    </td>
+                    <td className={`${styles.td} ${styles.tdCenter}`}>
+                      <Stars rating={t.rating} />
+                    </td>
+                    <td className={`${styles.td} ${styles.tdCenter}`}>
+                      <ScoreBadge score={t.aiScore} />
+                    </td>
+                    <td className={`${styles.td} ${styles.tdCenter}`}>
+                      <span className={`${styles.statusDot} ${styles[`dot_${t.status}`]}`} />
+                    </td>
+                    <td className={`${styles.td} ${styles.tdCenter}`}>
+                      <button className={styles.kebabBtn} aria-label="Actions">
+                        <span /><span /><span />
+                      </button>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+
+          {/* Pagination */}
+          <div className={styles.pagination}>
+            <span className={styles.pageInfo}>Showing 1 to {filtered.length} of 142 Personnel</span>
+            <div className={styles.pageBtns}>
+              <button className={styles.pageArrow} disabled>
+                <svg width="13" height="13" viewBox="0 0 24 24" fill="none">
+                  <polyline points="15 18 9 12 15 6" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+                </svg>
+              </button>
+              {[1, 2, 3].map((n) => (
+                <button
+                  key={n}
+                  className={page === n ? styles.pageNumActive : styles.pageNum}
+                  onClick={() => setPage(n)}
+                >{n}</button>
+              ))}
+              <button className={styles.pageArrow}>
+                <svg width="13" height="13" viewBox="0 0 24 24" fill="none">
+                  <polyline points="9 18 15 12 9 6" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+                </svg>
+              </button>
+            </div>
+          </div>
+        </div>
+      </main>
+    </div>
+  );
+}

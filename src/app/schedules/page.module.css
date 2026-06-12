@@ -121,6 +121,15 @@
 }
 .teamRow:last-child { border-bottom: none; padding-bottom: 0; }
 
+.trainerRow {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 7px 0;
+  border-bottom: 1px solid #141414;
+}
+.trainerRow:last-child { border-bottom: none; padding-bottom: 0; }
+
 .memberWrap { position: relative; flex-shrink: 0; }
 
 .memberAvatar {
@@ -213,21 +222,23 @@
 }
 .iconBtn:hover { color: #f8e396; }
 
-.userChip {
-  width: 30px;
-  height: 30px;
-  border-radius: 50%;
-  background: #1e1e1e;
-  color: #f8e396;
-  font-size: 10px;
-  font-weight: 700;
+.logout {
+  background: none;
+  border: 1px solid rgba(248, 227, 150, 0.25);
+  color: rgba(248, 227, 150, 0.55);
+  cursor: pointer;
+  padding: 7px 16px;
+  border-radius: 7px;
   display: flex;
   align-items: center;
-  justify-content: center;
-  cursor: pointer;
-  transition: background 0.2s;
+  gap: 7px;
+  font-size: 12.5px;
+  font-weight: 600;
+  font-family: inherit;
+  letter-spacing: 0.3px;
+  transition: all 0.2s;
 }
-.userChip:hover { background: #2a2a2a; }
+.logout:hover { border-color: #f8e396; color: #f8e396; }
 
 .content { padding: 20px 20px 40px; flex: 1; }
 
@@ -240,24 +251,28 @@
 
 .monthTitle { font-size: 21px; font-weight: 700; color: #ffffff; }
 
-.navBtns { display: flex; gap: 4px; }
+.navBtns {
+  display: flex;
+  border: 1px solid rgba(248, 227, 150, 0.2);
+  border-radius: 8px;
+  overflow: hidden;
+}
 
 .navBtn {
-  background: #1a1a1a;
-  border: 1px solid #2a2a2a;
-  color: #888888;
-  width: 26px;
-  height: 26px;
-  border-radius: 6px;
+  background: #111111;
+  border: none;
+  border-right: 1px solid rgba(248, 227, 150, 0.2);
+  color: rgba(248, 227, 150, 0.6);
+  width: 34px;
+  height: 30px;
   cursor: pointer;
-  font-size: 16px;
   display: flex;
   align-items: center;
   justify-content: center;
-  transition: all 0.2s;
-  line-height: 1;
+  transition: background 0.2s, color 0.2s;
 }
-.navBtn:hover { border-color: #f8e396; color: #f8e396; }
+.navBtn:last-child { border-right: none; }
+.navBtn:hover { background: rgba(248, 227, 150, 0.08); color: #f8e396; }
 
 /* Calendar */
 .calendar {
@@ -278,7 +293,7 @@
   padding: 8px 8px;
   font-size: 9.5px;
   font-weight: 700;
-  color: #444444;
+  color: rgba(248, 227, 150, 0.6);
   letter-spacing: 1px;
 }
 
@@ -354,8 +369,12 @@
   background: #0d0d0d;
   border: 1px solid #1e1e1e;
   border-radius: 10px;
-  padding: 13px;
+  padding: 13px 13px 13px 15px;
 }
+
+.card_high     { border-left: 3px solid #ffaa44; }
+.card_routine  { border-left: 3px solid #5aaa5a; }
+.card_internal { border-left: 3px solid #8888cc; }
 
 .taskTop {
   display: flex;
