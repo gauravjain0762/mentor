@@ -227,7 +227,7 @@
   border-collapse: collapse;
 }
 
-.thead { background: #080808; }
+.thead { background: #2A2A2A; }
 
 .th {
   padding: 11px 14px;
@@ -265,18 +265,22 @@
 .avatar {
   width: 38px;
   height: 38px;
-  border-radius: 50%;
-  font-size: 12px;
-  font-weight: 800;
-  display: flex;
-  align-items: center;
-  justify-content: center;
+  border-radius: 9px;
+  overflow: hidden;
   flex-shrink: 0;
   border: 1.5px solid transparent;
 }
-.av_healthy  { background: #0d2a1a; color: #22c55e; border-color: #1a4a2a; }
-.av_warning  { background: #2a1e00; color: #f8e396; border-color: #3a2e00; }
-.av_critical { background: #2a0a0a; color: #ff6b6b; border-color: #4a1a1a; }
+.av_healthy  { border-color: #1a4a2a; }
+.av_warning  { border-color: #3a2e00; }
+.av_critical { border-color: #4a1a1a; }
+
+.avatarImg {
+  width: 38px;
+  height: 38px;
+  object-fit: cover;
+  display: block;
+  border-radius: 7px;
+}
 
 .trainerName {
   font-size: 13px;
@@ -355,9 +359,9 @@
   height: 10px;
   border-radius: 50%;
 }
-.dot_healthy  { background: #22c55e; box-shadow: 0 0 6px #22c55e88; }
-.dot_warning  { background: #f8e396; box-shadow: 0 0 6px #f8e39688; }
-.dot_critical { background: #ff6b6b; box-shadow: 0 0 6px #ff6b6b88; }
+.dot_healthy  { background: #22c55e; }
+.dot_warning  { background: #f8e396; }
+.dot_critical { background: #ff6b6b; }
 
 /* Kebab / actions button */
 .kebabBtn {
@@ -383,6 +387,47 @@
   transition: background 0.2s;
 }
 .kebabBtn:hover span { background: #f8e396; }
+
+/* ── Actions dropdown ── */
+.menuWrap {
+  position: relative;
+  display: inline-flex;
+  justify-content: center;
+}
+
+.dropdown {
+  position: absolute;
+  top: calc(100% + 6px);
+  right: 0;
+  background: #141414;
+  border: 1px solid #2a2a2a;
+  border-radius: 10px;
+  padding: 6px;
+  min-width: 150px;
+  z-index: 100;
+  box-shadow: 0 8px 24px rgba(0,0,0,0.5);
+}
+
+.dropItem {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  width: 100%;
+  padding: 9px 12px;
+  background: none;
+  border: none;
+  border-radius: 7px;
+  color: #aaaaaa;
+  font-size: 12.5px;
+  font-weight: 600;
+  font-family: inherit;
+  cursor: pointer;
+  text-align: left;
+  transition: background 0.15s, color 0.15s;
+  white-space: nowrap;
+}
+.dropItem:hover { background: #1e1e1e; color: #f8e396; }
+.dropItem:first-child:hover { color: #f8e396; }
 
 /* ── Pagination ── */
 .pagination {

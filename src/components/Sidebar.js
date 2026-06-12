@@ -94,7 +94,7 @@ export default function Sidebar() {
       <div className={styles.userRow}>
         <div className={styles.avatar}>
           <Image
-            src="https://i.pravatar.cc/150?img=8"
+            src="https://i.pravatar.cc/150?img=33"
             alt="Executive Mentor"
             width={42}
             height={42}

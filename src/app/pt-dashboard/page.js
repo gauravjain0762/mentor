@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
+import Image from "next/image";
 import Sidebar from "@/components/Sidebar";
 import styles from "./page.module.css";
 
@@ -12,6 +13,7 @@ const TRAINERS = [
     gym: "Nexus Central Hub",
     location: "London, UK",
     initials: "JV",
+    img: "https://i.pravatar.cc/150?img=11",
     activeClients: 42,
     newClients: 5,
     retention: 78,
@@ -25,6 +27,7 @@ const TRAINERS = [
     gym: "Nexus South Hub",
     location: "London, UK",
     initials: "AS",
+    img: "https://i.pravatar.cc/150?img=12",
     activeClients: 38,
     newClients: 4,
     retention: 82,
@@ -38,6 +41,7 @@ const TRAINERS = [
     gym: "Vanguard East",
     location: "Manchester, UK",
     initials: "EC",
+    img: "https://i.pravatar.cc/150?img=5",
     activeClients: 25,
     newClients: 2,
     retention: 65,
@@ -51,6 +55,7 @@ const TRAINERS = [
     gym: "Obsidian West",
     location: "London, UK",
     initials: "MT",
+    img: "https://i.pravatar.cc/150?img=15",
     activeClients: 42,
     newClients: 6,
     retention: 88,
@@ -64,6 +69,7 @@ const TRAINERS = [
     gym: "Nexus Central Hub",
     location: "London, UK",
     initials: "DO",
+    img: "https://i.pravatar.cc/150?img=17",
     activeClients: 42,
     newClients: 5,
     retention: 78,
@@ -109,6 +115,11 @@ export default function PTDashboardPage() {
   const router = useRouter();
   const [search, setSearch] = useState("");
   const [page, setPage] = useState(1);
+  const [openMenu, setOpenMenu] = useState(null);
+
+  function toggleMenu(name) {
+    setOpenMenu((prev) => (prev === name ? null : name));
+  }
 
   const filtered = TRAINERS.filter(
     (t) =>
@@ -235,7 +246,9 @@ export default function PTDashboardPage() {
                   <tr key={t.name} className={styles.trow}>
                     <td className={styles.td}>
                       <div className={styles.profileCell}>
-                        <div className={`${styles.avatar} ${styles[`av_${t.status}`]}`}>{t.initials}</div>
+                        <div className={`${styles.avatar} ${styles[`av_${t.status}`]}`}>
+                          <Image src={t.img} alt={t.name} width={38} height={38} unoptimized className={styles.avatarImg} />
+                        </div>
                         <div>
                           <p className={styles.trainerName}>{t.name}</p>
                           <p className={styles.trainerTier}>{t.tier}</p>
@@ -265,9 +278,35 @@ export default function PTDashboardPage() {
                       <span className={`${styles.statusDot} ${styles[`dot_${t.status}`]}`} />
                     </td>
                     <td className={`${styles.td} ${styles.tdCenter}`}>
-                      <button className={styles.kebabBtn} aria-label="Actions">
-                        <span /><span /><span />
-                      </button>
+                      <div className={styles.menuWrap}>
+                        <button
+                          className={styles.kebabBtn}
+                          aria-label="Actions"
+                          onClick={() => toggleMenu(t.name)}
+                        >
+                          <span /><span /><span />
+                        </button>
+                        {openMenu === t.name && (
+                          <div className={styles.dropdown}>
+                            <button
+                              className={styles.dropItem}
+                              onClick={() => { setOpenMenu(null); router.push("/trainer-review"); }}
+                            >
+                              <svg width="14" height="14" viewBox="0 0 24 24" fill="none">
+                                <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"/>
+                              </svg>
+                              Chat
+                            </button>
+                            <button className={styles.dropItem} onClick={() => setOpenMenu(null)}>
+                              <svg width="14" height="14" viewBox="0 0 24 24" fill="none">
+                                <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z" stroke="currentColor" strokeWidth="1.8"/>
+                                <circle cx="12" cy="12" r="3" stroke="currentColor" strokeWidth="1.8"/>
+                              </svg>
+                              View Profile
+                            </button>
+                          </div>
+                        )}
+                      </div>
                     </td>
                   </tr>
                 ))}

@@ -17,12 +17,12 @@ const FILTERS = [
 ];
 
 const EVENT_COLORS = {
-  navy: { bg: "#162840", text: "#7ec8e3" },
-  pink: { bg: "#4a1030", text: "#ff7eb3" },
-  blue: { bg: "#122040", text: "#6baed6" },
-  gold: { bg: "#f8e396", text: "#000000" },
-  teal: { bg: "#0d3530", text: "#4ecdc4" },
-  gray: { bg: "#1e2a38", text: "#8eaac2" },
+  navy: { bg: "#70212428", text: "#f8e396" },
+  pink: { bg: "#70212428", text: "#f8e396" },
+  blue: { bg: "#70212428", text: "#f8e396" },
+  gold: { bg: "#70212428", text: "#f8e396" },
+  teal: { bg: "#70212428", text: "#f8e396" },
+  gray: { bg: "#70212428", text: "#f8e396" },
 };
 
 const EVENTS = {
@@ -122,26 +122,6 @@ export default function SchedulesPage() {
               </label>
             );
           })}
-        </div>
-
-        {/* Team Status */}
-        <div className={styles.section}>
-          <p className={styles.sectionTitle}>TEAM STATUS</p>
-          {[
-            { name: "Elena Vance",   role: "Trainer", online: true,  init: "EV" },
-            { name: "Marcus Thorne", role: "Trainer", online: false, init: "MT" },
-          ].map((m) => (
-            <div key={m.name} className={styles.teamRow}>
-              <div className={styles.memberWrap}>
-                <div className={styles.memberAvatar}>{m.init}</div>
-                <span className={`${styles.onlineDot} ${m.online ? styles.dotGreen : styles.dotGray}`} />
-              </div>
-              <div>
-                <p className={styles.memberName}>{m.name}</p>
-                <p className={styles.memberSub}>{m.role} · {m.online ? "Online" : "Offline"}</p>
-              </div>
-            </div>
-          ))}
         </div>
 
         {/* Trainers List */}

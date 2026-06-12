@@ -8,6 +8,7 @@
 
 /* ── Secondary panels (schedule-specific) ── */
 .panels {
+  margin-top: 55px;
   width: 170px;
   min-width: 170px;
   background: #000000;
