@@ -9,7 +9,7 @@
   position: relative;
   z-index: 50;
   transition: width 0.25s ease, min-width 0.25s ease;
-  overflow: hidden;
+  overflow: visible;
 }
 
 .sidebarCollapsed {
@@ -17,33 +17,30 @@
   min-width: 68px;
 }
 
-/* ── Toggle button ── */
+/* ── Toggle button — sits on the right border ── */
 .toggleBtn {
   position: absolute;
-  top: 80px;
-  right: 12px;
+  top: 72px;
+  right: -14px;
   width: 28px;
   height: 28px;
-  border-radius: 8px;
-  background: #1c1c1c;
-  border: 1px solid #2a2a2a;
+  border-radius: 50%;
+  background: #161616;
+  border: 1px solid #282828;
   color: #888888;
   cursor: pointer;
   display: flex;
   align-items: center;
   justify-content: center;
-  transition: background 0.2s, color 0.2s;
-  z-index: 10;
+  transition: background 0.2s, color 0.2s, border-color 0.2s;
+  z-index: 60;
   flex-shrink: 0;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.5);
 }
 .toggleBtn:hover {
-  background: #252525;
+  background: #1e1e1e;
+  border-color: rgba(248,227,150,0.3);
   color: #f8e396;
-}
-
-.sidebarCollapsed .toggleBtn {
-  right: 50%;
-  transform: translateX(50%);
 }
 
 /* ── Logo ── */
@@ -51,13 +48,31 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  padding: 28px 20px 22px;
+  padding: 28px 20px 10px;
   text-decoration: none;
 }
 
 .logoImg {
   object-fit: contain;
   flex-shrink: 0;
+}
+
+.logoSub {
+  font-size: 9px;
+  font-weight: 700;
+  letter-spacing: 2.5px;
+  color: #3a3a3a;
+  text-align: center;
+  padding: 0 20px 18px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-transform: uppercase;
+  border-bottom: 1px solid #141414;
+}
+
+.logoSubHidden {
+  opacity: 0;
+  pointer-events: none;
 }
 
 /* ── Divider ── */

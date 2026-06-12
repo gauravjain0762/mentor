@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { useRouter } from "next/navigation";
 import Image from "next/image";
 import Sidebar from "@/components/Sidebar";
 import TopBar from "@/components/TopBar";
@@ -45,6 +46,7 @@ const LOGS = [
 ];
 
 export default function OperationalPage() {
+  const router = useRouter();
   const [search,       setSearch]       = useState("");
   const [dateRange,    setDateRange]    = useState("This Week");
   const [personnel,    setPersonnel]    = useState("All Personnel");
@@ -75,14 +77,24 @@ export default function OperationalPage() {
               <h1 className={styles.pageTitle}>Mentor Activity Center</h1>
               <p className={styles.pageSubtitle}>Monitor check-ins, reviews, escalations, and support activities.</p>
             </div>
-            <button className={styles.exportBtn}>
-              <svg width="14" height="14" viewBox="0 0 24 24" fill="none">
-                <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" stroke="currentColor" strokeWidth="2" strokeLinecap="round"/>
-                <polyline points="7 10 12 15 17 10" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
-                <line x1="12" y1="15" x2="12" y2="3" stroke="currentColor" strokeWidth="2" strokeLinecap="round"/>
-              </svg>
-              Export Log
-            </button>
+            <div className={styles.headBtns}>
+              <button className={styles.addBtn} onClick={() => router.push("/operational/add")}>
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none">
+                  <circle cx="12" cy="12" r="9" stroke="currentColor" strokeWidth="2"/>
+                  <line x1="12" y1="8" x2="12" y2="16" stroke="currentColor" strokeWidth="2" strokeLinecap="round"/>
+                  <line x1="8" y1="12" x2="16" y2="12" stroke="currentColor" strokeWidth="2" strokeLinecap="round"/>
+                </svg>
+                Add Log
+              </button>
+              <button className={styles.exportBtn}>
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none">
+                  <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" stroke="currentColor" strokeWidth="2" strokeLinecap="round"/>
+                  <polyline points="7 10 12 15 17 10" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+                  <line x1="12" y1="15" x2="12" y2="3" stroke="currentColor" strokeWidth="2" strokeLinecap="round"/>
+                </svg>
+                Export Log
+              </button>
+            </div>
           </div>
 
           {/* Filters card */}

@@ -83,6 +83,11 @@ export default function SchedulesPage() {
       {/* Shared icon sidebar */}
       <Sidebar />
 
+      <div className={styles.rightSection}>
+        <TopBar />
+
+        <div className={styles.body}>
+
       {/* Schedule-specific panels */}
       <aside className={styles.panels}>
         {/* Event Filters */}
@@ -151,8 +156,6 @@ export default function SchedulesPage() {
 
       {/* Main content */}
       <main className={styles.main}>
-        <TopBar />
-
         <div className={styles.content}>
           <div className={styles.calHeader}>
             <h2 className={styles.monthTitle}>October 2024</h2>
@@ -234,6 +237,8 @@ export default function SchedulesPage() {
       </main>
 
       <RightAlerts />
+        </div> {/* body */}
+      </div> {/* rightSection */}
     </div>
   );
 }

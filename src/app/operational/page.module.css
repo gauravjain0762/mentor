@@ -45,6 +45,29 @@
   font-weight: 400;
 }
 
+.headBtns {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.addBtn {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  background: #f8e396;
+  border: none;
+  color: #000;
+  padding: 9px 18px;
+  border-radius: 8px;
+  font-size: 12px;
+  font-weight: 700;
+  font-family: inherit;
+  cursor: pointer;
+  transition: background 0.2s;
+}
+.addBtn:hover { background: #faf2b8; }
+
 .exportBtn {
   display: flex;
   align-items: center;

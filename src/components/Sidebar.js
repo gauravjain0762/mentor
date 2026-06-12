@@ -96,6 +96,11 @@ export default function Sidebar() {
         />
       </a>
 
+      {/* Subtitle */}
+      <p className={`${styles.logoSub} ${collapsed ? styles.logoSubHidden : ""}`}>
+        Gym Mentor
+      </p>
+
       {/* Divider */}
       <div className={styles.divider} />
 

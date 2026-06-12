@@ -2,34 +2,35 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
+import Image from "next/image";
 import Sidebar from "@/components/Sidebar";
 import TopBar from "@/components/TopBar";
 import styles from "./page.module.css";
 
 const REVIEWS = [
   {
-    init: "MK", name: "Master Kaelen",  role: "Lead Tactical",
+    img: "https://i.pravatar.cc/150?img=11", init: "MK", name: "Master Kaelen",  role: "Lead Tactical",
     client: "A. Sterling",  clientId: "8842-X",
     rating: 5,
     feedback: "Exceptional drilling on the infiltration simulator. Kaelen's methodology is unlike anything offered in standard protocol.",
     sentiment: "positive", date: "Oct 12, 2023",
   },
   {
-    init: "SV", name: "Sgt. Valerius",  role: "Ballistics Specialist",
+    img: "https://i.pravatar.cc/150?img=20", init: "SV", name: "Sgt. Valerius",  role: "Ballistics Specialist",
     client: "Anonymous",    clientId: "9011-B",
     rating: 4,
     feedback: "Instructions were clear but the pace felt slightly rushed for advanced diagnostics.",
     sentiment: "neutral",  date: "Oct 11, 2023",
   },
   {
-    init: "MS", name: "Major Silas",    role: "Strategic Intelligence",
+    img: "https://i.pravatar.cc/150?img=15", init: "MS", name: "Major Silas",    role: "Strategic Intelligence",
     client: "J. Draken",    clientId: "7720-Y",
     rating: 5,
     feedback: "Silas provides insights that you simply can't find in manuals. The historical context alone is worth every session.",
     sentiment: "positive", date: "Oct 10, 2023",
   },
   {
-    init: "CR", name: "Cmdr. Radek",    role: "Cyber Warfare",
+    img: "https://i.pravatar.cc/150?img=52", init: "CR", name: "Cmdr. Radek",    role: "Cyber Warfare",
     client: "T. Thorne",    clientId: "1105-Z",
     rating: 2,
     feedback: "Hardware malfunction during the drill. Instructor was unable to reset the node and the session ended prematurely.",
@@ -189,7 +190,14 @@ export default function TrainerReviewPage() {
                     <tr key={r.name} className={styles.trow}>
                       <td className={styles.td}>
                         <div className={styles.trainerCell}>
-                          <div className={styles.trainerAvatar}>{r.init}</div>
+                          <Image
+                            src={r.img}
+                            alt={r.name}
+                            width={38}
+                            height={38}
+                            unoptimized
+                            className={styles.trainerAvatar}
+                          />
                           <div>
                             <p className={styles.trainerName}>{r.name}</p>
                             <p className={styles.trainerRole}>{r.role}</p>

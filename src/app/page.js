@@ -1,9 +1,33 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect, useRef } from "react";
 import { useRouter } from "next/navigation";
 import Image from "next/image";
+import { Cinzel } from "next/font/google";
 import styles from "./page.module.css";
+
+const cinzel = Cinzel({ subsets: ["latin"], weight: ["600", "700", "900"] });
+
+function CountUp({ target, decimals = 0, suffix = "", duration = 1800 }) {
+  const [value, setValue] = useState(0);
+  const rafRef = useRef(null);
+
+  useEffect(() => {
+    const start = performance.now();
+    function tick(now) {
+      const elapsed = now - start;
+      const progress = Math.min(elapsed / duration, 1);
+      // ease-out cubic
+      const eased = 1 - Math.pow(1 - progress, 3);
+      setValue(parseFloat((eased * target).toFixed(decimals)));
+      if (progress < 1) rafRef.current = requestAnimationFrame(tick);
+    }
+    rafRef.current = requestAnimationFrame(tick);
+    return () => cancelAnimationFrame(rafRef.current);
+  }, [target, decimals, duration]);
+
+  return <span>{value.toFixed(decimals)}{suffix}</span>;
+}
 
 export default function LoginPage() {
   const router = useRouter();
@@ -42,15 +66,15 @@ export default function LoginPage() {
 
           <div className={styles.stats}>
             <div className={styles.statItem}>
-              <span className={styles.statNum}>24+</span>
+              <span className={styles.statNum}><CountUp target={24} suffix="+" /></span>
               <span className={styles.statLabel}>ACTIVE TRAINERS</span>
             </div>
             <div className={styles.statItem}>
-              <span className={styles.statNum}>482</span>
+              <span className={styles.statNum}><CountUp target={482} /></span>
               <span className={styles.statLabel}>CLIENTS MANAGED</span>
             </div>
             <div className={styles.statItem}>
-              <span className={styles.statNum}>4.8</span>
+              <span className={styles.statNum}><CountUp target={4.8} decimals={1} /></span>
               <span className={styles.statLabel}>AVG RATING</span>
             </div>
           </div>
@@ -120,8 +144,8 @@ export default function LoginPage() {
               <span className={styles.forgotLink}>Forgot Password?</span>
             </div>
 
-            <button className={styles.loginBtn} type="submit">
-              SIGN IN TO DASHBOARD
+            <button className={`${styles.loginBtn} ${cinzel.className}`} type="submit">
+              Sign In to Dashboard
             </button>
 
           </form>

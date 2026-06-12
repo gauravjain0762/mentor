@@ -219,10 +219,9 @@
   border: none;
   border-radius: 8px;
   padding: 15px;
-  font-size: 12px;
-  font-weight: 800;
-  font-family: inherit;
-  letter-spacing: 2px;
+  font-size: 13px;
+  font-weight: 600;
+  letter-spacing: 2.5px;
   cursor: pointer;
   width: 100%;
   margin-top: 4px;
