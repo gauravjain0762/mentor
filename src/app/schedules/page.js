@@ -1,9 +1,10 @@
 "use client";
 
 import { useState } from "react";
-import { useRouter } from "next/navigation";
+import Image from "next/image";
 import Sidebar from "@/components/Sidebar";
 import RightAlerts from "@/components/RightAlerts";
+import TopBar from "@/components/TopBar";
 import styles from "./page.module.css";
 
 const FILTER_KEYS = ["checkins", "transcripts", "retention", "escalations", "tickets"];
@@ -57,7 +58,6 @@ const TASKS = [
 ];
 
 export default function SchedulesPage() {
-  const router = useRouter();
   const [activeFilters, setActiveFilters] = useState(new Set(FILTER_KEYS));
 
   const allSelected = activeFilters.size === FILTER_KEYS.length;
@@ -128,16 +128,16 @@ export default function SchedulesPage() {
         <div className={styles.section}>
           <p className={styles.sectionTitle}>TRAINERS</p>
           {[
-            { init: "JV", name: "Julian Vance",    role: "Elite Trainer", online: true  },
-            { init: "AS", name: "Alistair Sterling",role: "Elite Trainer", online: true  },
-            { init: "EC", name: "Evelyn Cross",    role: "Pro Trainer",   online: false },
-            { init: "MT", name: "Marcus Thorne",   role: "Elite Trainer", online: true  },
-            { init: "RK", name: "Ravi Kumar",      role: "Pro Trainer",   online: false },
-            { init: "SD", name: "Sara Devi",       role: "Trainer",       online: true  },
+            { img: "https://i.pravatar.cc/150?img=11", name: "Julian Vance",     role: "Elite Trainer", online: true  },
+            { img: "https://i.pravatar.cc/150?img=12", name: "Alistair Sterling", role: "Elite Trainer", online: true  },
+            { img: "https://i.pravatar.cc/150?img=5",  name: "Evelyn Cross",     role: "Pro Trainer",   online: false },
+            { img: "https://i.pravatar.cc/150?img=15", name: "Marcus Thorne",    role: "Elite Trainer", online: true  },
+            { img: "https://i.pravatar.cc/150?img=20", name: "Ravi Kumar",       role: "Pro Trainer",   online: false },
+            { img: "https://i.pravatar.cc/150?img=47", name: "Sara Devi",        role: "Trainer",       online: true  },
           ].map((t) => (
             <div key={t.name} className={styles.trainerRow}>
               <div className={styles.memberWrap}>
-                <div className={styles.memberAvatar}>{t.init}</div>
+                <Image src={t.img} alt={t.name} width={34} height={34} unoptimized className={styles.memberAvatar} />
                 <span className={`${styles.onlineDot} ${t.online ? styles.dotGreen : styles.dotGray}`} />
               </div>
               <div>
@@ -151,24 +151,7 @@ export default function SchedulesPage() {
 
       {/* Main content */}
       <main className={styles.main}>
-        <header className={styles.topBar}>
-          <div className={styles.topActions}>
-            <button className={styles.iconBtn} aria-label="Notifications">
-              <svg width="18" height="18" viewBox="0 0 24 24" fill="none">
-                <path d="M18 8a6 6 0 0 0-12 0c0 7-3 9-3 9h18s-3-2-3-9" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"/>
-                <path d="M13.73 21a2 2 0 0 1-3.46 0" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round"/>
-              </svg>
-            </button>
-            <button className={styles.logout} onClick={() => router.push("/")}>
-              <svg width="14" height="14" viewBox="0 0 24 24" fill="none">
-                <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round"/>
-                <polyline points="16 17 21 12 16 7" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"/>
-                <line x1="21" y1="12" x2="9" y2="12" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round"/>
-              </svg>
-              Logout
-            </button>
-          </div>
-        </header>
+        <TopBar />
 
         <div className={styles.content}>
           <div className={styles.calHeader}>

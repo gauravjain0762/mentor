@@ -8,7 +8,7 @@ const montserrat = Montserrat({
 });
 
 export const metadata = {
-  title: "Upt Gym",
+  title: "Mentor Portal",
   description: "Gym Management Software",
 };
 

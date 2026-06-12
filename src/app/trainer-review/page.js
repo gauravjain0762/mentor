@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import Sidebar from "@/components/Sidebar";
+import TopBar from "@/components/TopBar";
 import styles from "./page.module.css";
 
 const REVIEWS = [
@@ -71,33 +72,7 @@ export default function TrainerReviewPage() {
       <Sidebar />
 
       <main className={styles.main}>
-        {/* Top bar */}
-        <header className={styles.topBar}>
-          <div className={styles.searchWrap}>
-            <svg className={styles.searchIcon} width="13" height="13" viewBox="0 0 24 24" fill="none">
-              <circle cx="11" cy="11" r="7" stroke="currentColor" strokeWidth="2"/>
-              <line x1="16.5" y1="16.5" x2="22" y2="22" stroke="currentColor" strokeWidth="2" strokeLinecap="round"/>
-            </svg>
-            <input className={styles.searchInput} placeholder="Search operational intelligence..."
-              value={search} onChange={e => setSearch(e.target.value)} />
-          </div>
-          <div className={styles.topRight}>
-            <button className={styles.iconBtn} aria-label="Notifications">
-              <svg width="18" height="18" viewBox="0 0 24 24" fill="none">
-                <path d="M18 8a6 6 0 0 0-12 0c0 7-3 9-3 9h18s-3-2-3-9" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"/>
-                <path d="M13.73 21a2 2 0 0 1-3.46 0" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round"/>
-              </svg>
-            </button>
-            <button className={styles.logout} onClick={() => router.push("/")}>
-              <svg width="14" height="14" viewBox="0 0 24 24" fill="none">
-                <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round"/>
-                <polyline points="16 17 21 12 16 7" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"/>
-                <line x1="21" y1="12" x2="9" y2="12" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round"/>
-              </svg>
-              Logout
-            </button>
-          </div>
-        </header>
+        <TopBar />
 
         <div className={styles.content}>
           {/* Breadcrumb */}
@@ -238,7 +213,7 @@ export default function TrainerReviewPage() {
                         <p className={styles.dateText}>{r.date}</p>
                       </td>
                       <td className={styles.td}>
-                        <button className={styles.chatBtn} aria-label="Open chat">
+                        <button className={styles.chatBtn} aria-label="Open chat" onClick={() => router.push("/messaging")}>
                           <svg width="15" height="15" viewBox="0 0 24 24" fill="none">
                             <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"
                               stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
