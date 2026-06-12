@@ -37,7 +37,7 @@ export default function LoginPage() {
 
           <p className={styles.gymTag}></p>
           <h1 className={styles.brandTitle}>MENTOR<br />DASHBOARD</h1>
-          <p className={styles.brandSub}>
+          <p className={styles.brandSub} style={{ color: "#E2E2E2" }}>
             Empowering trainers through guidance,<br />
             performance insights &amp; operational control.
           </p>

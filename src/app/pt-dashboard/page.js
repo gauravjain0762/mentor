@@ -58,6 +58,19 @@ const TRAINERS = [
     aiScore: 91,
     status: "healthy",
   },
+  {
+    name: "Danny Olive",
+    tier: "Elite Tier Trainer",
+    gym: "Nexus Central Hub",
+    location: "London, UK",
+    initials: "DO",
+    activeClients: 42,
+    newClients: 5,
+    retention: 78,
+    rating: 4.2,
+    aiScore: 62,
+    status: "warning",
+  },
 ];
 
 function RetentionBar({ pct }) {
@@ -146,19 +159,18 @@ export default function PTDashboardPage() {
             <div>
               <h1 className={styles.pageTitle}>Assigned PT&apos;S</h1>
               <p className={styles.pageSubtitle}>
-                Active personal trainer performance matrix and risk assessment<br />
-                dashboard for <span className={styles.hiYellow}>high-command</span> oversight.
+                Monitor performance, engagement, and progress of all assigned Personal Trainers.
               </p>
             </div>
             <div className={styles.headActions}>
-              <button className={styles.onboardBtn}>
+              {/* <button className={styles.onboardBtn}>
                 <svg width="14" height="14" viewBox="0 0 24 24" fill="none">
                   <circle cx="12" cy="12" r="9" stroke="currentColor" strokeWidth="2" />
                   <line x1="12" y1="8" x2="12" y2="16" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
                   <line x1="8" y1="12" x2="16" y2="12" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
                 </svg>
                 ONBOARD NEW PT
-              </button>
+              </button> */}
               <button className={styles.filterBtn}>
                 <svg width="14" height="14" viewBox="0 0 24 24" fill="none">
                   <line x1="4" y1="6" x2="20" y2="6" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />

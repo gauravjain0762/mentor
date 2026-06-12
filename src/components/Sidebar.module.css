@@ -20,7 +20,7 @@
 /* ── Toggle button ── */
 .toggleBtn {
   position: absolute;
-  top: 16px;
+  top: 80px;
   right: 12px;
   width: 28px;
   height: 28px;
@@ -82,7 +82,7 @@
 .avatar {
   width: 42px;
   height: 42px;
-  border-radius: 50%;
+  border-radius: 10px;
   overflow: hidden;
   flex-shrink: 0;
   border: 2px solid rgba(248, 227, 150, 0.35);
@@ -91,7 +91,7 @@
 .avatarImg {
   width: 42px;
   height: 42px;
-  border-radius: 50%;
+  border-radius: 8px;
   object-fit: cover;
   display: block;
 }
@@ -113,7 +113,7 @@
 
 .userRole {
   font-size: 11px;
-  color: #555555;
+  color: #f8e396;
   margin-top: 2px;
   white-space: nowrap;
   font-weight: 500;

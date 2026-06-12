@@ -12,7 +12,7 @@ const CHART = {
     line: "M 0,185 C 70,183 110,178 150,168 C 200,155 240,118 295,62 C 340,20 390,14 450,12 C 510,10 560,10 600,10",
     labels: ["SEP 01", "SEP 08", "SEP 15", "SEP 22", "SEP 30"],
   },
-  "1M": {
+  "30D": {
     line: "M 0,188 C 60,186 100,182 155,172 C 215,158 250,130 300,90 C 350,50 400,24 455,16 C 505,10 560,9 600,9",
     labels: ["SEP 01", "SEP 08", "SEP 15", "SEP 22", "SEP 30"],
   },
@@ -136,7 +136,7 @@ export default function DashboardPage() {
               <p className={styles.chartSub}>Growth &amp; feedback resonance analysis.</p>
             </div>
             <div className={styles.toggle}>
-              {["7D", "1M"].map((p) => (
+              {["7D", "30D"].map((p) => (
                 <button
                   key={p}
                   className={period === p ? styles.toggleActive : styles.toggleBtn}

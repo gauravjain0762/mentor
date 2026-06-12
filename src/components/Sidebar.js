@@ -19,6 +19,18 @@ const NAV = [
     ),
   },
   {
+    href: "/pt-dashboard",
+    label: "Assigned PT's ",
+    icon: (
+      <svg width="19" height="19" viewBox="0 0 24 24" fill="none">
+        <circle cx="9" cy="7" r="3" stroke="currentColor" strokeWidth="2" />
+        <path d="M3 21v-2a4 4 0 0 1 4-4h4a4 4 0 0 1 4 4v2" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
+        <path d="M16 3.13a4 4 0 0 1 0 7.75" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
+        <path d="M21 21v-2a4 4 0 0 0-3-3.85" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
+      </svg>
+    ),
+  },
+  {
     href: "/schedules",
     label: "Schedules",
     icon: (
@@ -37,18 +49,6 @@ const NAV = [
       <svg width="19" height="19" viewBox="0 0 24 24" fill="none">
         <circle cx="12" cy="12" r="9" stroke="currentColor" strokeWidth="2" />
         <polyline points="12,7 12,12 15,15" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
-      </svg>
-    ),
-  },
-  {
-    href: "/pt-dashboard",
-    label: "PT Dashboard",
-    icon: (
-      <svg width="19" height="19" viewBox="0 0 24 24" fill="none">
-        <circle cx="9" cy="7" r="3" stroke="currentColor" strokeWidth="2" />
-        <path d="M3 21v-2a4 4 0 0 1 4-4h4a4 4 0 0 1 4 4v2" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
-        <path d="M16 3.13a4 4 0 0 1 0 7.75" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
-        <path d="M21 21v-2a4 4 0 0 0-3-3.85" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
       </svg>
     ),
   },
@@ -104,8 +104,8 @@ export default function Sidebar() {
         </div>
         {!collapsed && (
           <div className={styles.userInfo}>
-            <span className={styles.userName}>Executive</span>
-            <span className={styles.userRole}>Mentor</span>
+            <span className={styles.userName}>David Anderson</span>
+            <span className={styles.userRole}>Performance Mentor</span>
           </div>
         )}
       </div>
