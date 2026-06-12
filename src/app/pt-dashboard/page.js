@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { useRouter } from "next/navigation";
 import Image from "next/image";
 import Sidebar from "@/components/Sidebar";
 import TopBar from "@/components/TopBar";
@@ -112,6 +113,7 @@ function ScoreBadge({ score }) {
 }
 
 export default function PTDashboardPage() {
+  const router = useRouter();
   const [page, setPage] = useState(1);
   const [openMenu, setOpenMenu] = useState(null);
 
@@ -254,7 +256,7 @@ export default function PTDashboardPage() {
                           <div className={styles.dropdown}>
                             <button
                               className={styles.dropItem}
-                              onClick={() => { setOpenMenu(null); router.push("/trainer-review"); }}
+                              onClick={() => { setOpenMenu(null); router.push(`/messaging?trainer=${encodeURIComponent(t.name)}`); }}
                             >
                               <svg width="14" height="14" viewBox="0 0 24 24" fill="none">
                                 <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"/>

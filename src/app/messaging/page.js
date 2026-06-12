@@ -1,6 +1,7 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
+import { useSearchParams } from "next/navigation";
 import Image from "next/image";
 import Sidebar from "@/components/Sidebar";
 import TopBar from "@/components/TopBar";
@@ -84,8 +85,17 @@ const TRAINERS = [
 ];
 
 export default function MessagingPage() {
+  const searchParams = useSearchParams();
   const [active, setActive] = useState(TRAINERS[0]);
   const [input, setInput] = useState("");
+
+  useEffect(() => {
+    const name = searchParams.get("trainer");
+    if (name) {
+      const found = TRAINERS.find((t) => t.name === decodeURIComponent(name));
+      if (found) setActive(found);
+    }
+  }, [searchParams]);
 
   return (
     <div className={styles.layout}>

@@ -356,16 +356,24 @@
 .tasksBadge  { font-size: 9px; font-weight: 700; color: #666666; letter-spacing: 1px; }
 
 .taskGrid {
-  display: grid;
-  grid-template-columns: repeat(3, 1fr);
-  gap: 10px;
+  display: flex;
+  flex-direction: row;
+  gap: 12px;
+  overflow-x: auto;
+  padding-bottom: 8px;
+  scrollbar-width: thin;
+  scrollbar-color: #222 transparent;
 }
+.taskGrid::-webkit-scrollbar { height: 3px; }
+.taskGrid::-webkit-scrollbar-thumb { background: #222; border-radius: 99px; }
 
 .taskCard {
   background: #0d0d0d;
   border: 1px solid #1e1e1e;
   border-radius: 10px;
   padding: 13px 13px 13px 15px;
+  min-width: 220px;
+  flex-shrink: 0;
 }
 
 .card_high     { border-left: 3px solid #ffaa44; }
