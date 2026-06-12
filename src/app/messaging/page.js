@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, Suspense } from "react";
 import { useSearchParams } from "next/navigation";
 import Image from "next/image";
 import Sidebar from "@/components/Sidebar";
@@ -147,7 +147,7 @@ function StackedAvatars({ members, size, offset, borderColor }) {
   );
 }
 
-export default function MessagingPage() {
+function MessagingContent() {
   const searchParams = useSearchParams();
   const [active, setActive] = useState(GROUPS[0]);
 
@@ -332,5 +332,13 @@ export default function MessagingPage() {
         </div>
       </div>
     </div>
+  );
+}
+
+export default function MessagingPage() {
+  return (
+    <Suspense fallback={<div style={{ color: "#555", padding: 40 }}>Loading...</div>}>
+      <MessagingContent />
+    </Suspense>
   );
 }

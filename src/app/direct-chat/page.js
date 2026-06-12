@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect, useRef, Suspense } from "react";
 import { useSearchParams } from "next/navigation";
 import Image from "next/image";
 import { useRouter } from "next/navigation";
@@ -83,7 +83,7 @@ const TRAINER_DATA = {
 
 const DEFAULT_TRAINER = TRAINER_DATA["Julian Vance"];
 
-export default function DirectChatPage() {
+function DirectChatContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const [trainer, setTrainer] = useState(DEFAULT_TRAINER);
@@ -241,5 +241,13 @@ export default function DirectChatPage() {
         </div>
       </div>
     </div>
+  );
+}
+
+export default function DirectChatPage() {
+  return (
+    <Suspense fallback={<div style={{ color: "#555", padding: 40 }}>Loading...</div>}>
+      <DirectChatContent />
+    </Suspense>
   );
 }
