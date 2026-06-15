@@ -177,7 +177,7 @@ export default function OperationalPage() {
             </svg>
             <input
               className={styles.searchInput}
-              placeholder="Search PT, notes, or activity..."
+              placeholder="Search PT, notes, or activity"
               value={search}
               onChange={(e) => setSearch(e.target.value)}
             />

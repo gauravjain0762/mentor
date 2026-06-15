@@ -315,7 +315,7 @@ function MessagingContent() {
               </button>
               <input
                 className={styles.msgInput}
-                placeholder="Type an operational directive..."
+                placeholder="Type an operational directive"
                 value={input}
                 onChange={(e) => setInput(e.target.value)}
                 onKeyDown={(e) => { if (e.key === "Enter") setInput(""); }}

@@ -165,7 +165,7 @@ export default function PTDashboardPage() {
               <p className={styles.statLabel}>TOTAL PERSONNEL</p>
               <div className={styles.statValueRow}>
                 <span className={styles.statValue}>142</span>
-                <span className={styles.statDelta}>+12% vs LY</span>
+                {/* <span className={styles.statDelta}>+12% vs LY</span> */}
               </div>
             </div>
             <div className={`${styles.statCard} ${styles.statGreen}`}>
