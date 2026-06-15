@@ -41,10 +41,10 @@ export default function AddLogPage() {
 
           {/* Back link */}
           <button className={styles.backLink} onClick={() => router.push("/operational")}>
-            <svg width="13" height="13" viewBox="0 0 24 24" fill="none">
+            <svg width="12" height="12" viewBox="0 0 24 24" fill="none">
               <polyline points="15 18 9 12 15 6" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"/>
             </svg>
-            Back to Activity Log
+            BACK
           </button>
 
           {/* Centered card */}
@@ -70,10 +70,17 @@ export default function AddLogPage() {
                     <div className={styles.row}>
                       <div className={styles.field}>
                         <label className={styles.label}>PT Directory</label>
-                        <select className={styles.select} value={form.pt} onChange={(e) => set("pt", e.target.value)}>
-                          <option value="">Select PT...</option>
-                          {PT_LIST.map((p) => <option key={p}>{p}</option>)}
-                        </select>
+                        <div className={styles.selectWrap}>
+                          <select className={`${styles.select} ${styles.selectPadded}`} value={form.pt} onChange={(e) => set("pt", e.target.value)}>
+                            <option value="">Select PT...</option>
+                            {PT_LIST.map((p) => <option key={p}>{p}</option>)}
+                          </select>
+                          <div className={styles.selectIcon}>
+                            <svg width="12" height="12" viewBox="0 0 24 24" fill="none">
+                              <polyline points="6 9 12 15 18 9" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+                            </svg>
+                          </div>
+                        </div>
                       </div>
                       <div className={styles.field}>
                         <label className={styles.label}>Execution Date</label>
@@ -82,6 +89,7 @@ export default function AddLogPage() {
                           className={styles.input}
                           value={form.date}
                           onChange={(e) => set("date", e.target.value)}
+                          onClick={(e) => e.target.showPicker?.()}
                         />
                       </div>
                     </div>
@@ -96,11 +104,8 @@ export default function AddLogPage() {
                             {ACTIVITY_TYPES.map((t) => <option key={t}>{t}</option>)}
                           </select>
                           <div className={styles.selectIcon}>
-                            <svg width="14" height="14" viewBox="0 0 24 24" fill="none">
-                              <rect x="3" y="3" width="7" height="7" rx="1" stroke="currentColor" strokeWidth="1.8"/>
-                              <rect x="14" y="3" width="7" height="7" rx="1" stroke="currentColor" strokeWidth="1.8"/>
-                              <rect x="3" y="14" width="7" height="7" rx="1" stroke="currentColor" strokeWidth="1.8"/>
-                              <rect x="14" y="14" width="7" height="7" rx="1" stroke="currentColor" strokeWidth="1.8"/>
+                            <svg width="12" height="12" viewBox="0 0 24 24" fill="none">
+                              <polyline points="6 9 12 15 18 9" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
                             </svg>
                           </div>
                         </div>
@@ -129,14 +134,6 @@ export default function AddLogPage() {
                       </div>
                     </div>
 
-                    {/* Validation status */}
-                    <div className={styles.validationRow}>
-                      <span className={`${styles.validDot} ${isValid ? styles.validDotGreen : styles.validDotYellow}`} />
-                      <span className={`${styles.validText} ${isValid ? styles.validTextGreen : styles.validTextYellow}`}>
-                        {isValid ? "Entry Ready to Submit" : "Awaiting Entry Validation"}
-                      </span>
-                    </div>
-
                     {/* Notes */}
                     <div className={styles.field}>
                       <label className={styles.label}>Detailed Observations</label>
@@ -156,9 +153,6 @@ export default function AddLogPage() {
                       </button>
                       <button type="submit" className={styles.submitBtn}>
                         SUBMIT ENTRY
-                        <svg width="13" height="13" viewBox="0 0 24 24" fill="none">
-                          <polygon points="5 3 19 12 5 21 5 3" fill="currentColor"/>
-                        </svg>
                       </button>
                     </div>
 

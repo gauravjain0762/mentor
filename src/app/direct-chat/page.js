@@ -129,9 +129,10 @@ function DirectChatContent() {
           <div className={styles.chatHeader}>
             <div className={styles.headerLeft}>
               <button className={styles.backBtn} onClick={() => router.push("/pt-dashboard")}>
-                <svg width="16" height="16" viewBox="0 0 24 24" fill="none">
-                  <polyline points="15 18 9 12 15 6" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round"/>
+                <svg width="12" height="12" viewBox="0 0 24 24" fill="none">
+                  <polyline points="15 18 9 12 15 6" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"/>
                 </svg>
+                BACK
               </button>
               <div className={styles.avatarWrap}>
                 <Image

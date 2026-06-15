@@ -39,24 +39,23 @@
 }
 
 .backBtn {
-  display: flex;
+  display: inline-flex;
   align-items: center;
-  justify-content: center;
-  width: 32px;
-  height: 32px;
-  border-radius: 8px;
-  background: #111111;
-  border: 1px solid #1e1e1e;
-  color: #888;
+  gap: 6px;
+  background: none;
+  border: 1px solid #222;
+  color: #666;
+  padding: 9px 20px;
+  border-radius: 7px;
+  font-size: 10.5px;
+  font-weight: 700;
+  font-family: inherit;
+  letter-spacing: 1.2px;
   cursor: pointer;
   flex-shrink: 0;
-  transition: background 0.18s, color 0.18s, border-color 0.18s;
+  transition: border-color 0.2s, color 0.2s;
 }
-.backBtn:hover {
-  background: #1a1a1a;
-  border-color: rgba(248,227,150,0.3);
-  color: #f8e396;
-}
+.backBtn:hover { border-color: #333; color: #999; }
 
 .avatarWrap {
   position: relative;

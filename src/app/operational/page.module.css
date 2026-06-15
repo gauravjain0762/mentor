@@ -100,7 +100,6 @@
   display: flex;
   gap: 14px;
   flex-wrap: wrap;
-  margin-bottom: 12px;
   align-items: flex-end;
 }
 
@@ -130,7 +129,8 @@
   position: relative;
   display: flex;
   align-items: center;
-  width: 340px;
+  width: 50%;
+  margin-bottom: 14px;
 }
 
 .searchIcon {

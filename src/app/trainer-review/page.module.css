@@ -160,7 +160,7 @@
   padding: 11px 14px; text-align: left;
   font-size: 8.5px; font-weight: 700; color: rgba(248, 227, 150, 0.6);
   letter-spacing: 1.2px; border-bottom: 1px solid #1e1e1e;
-  background: #0d0d0d; white-space: nowrap;
+  background: #111111; white-space: nowrap;
 }
 
 .trow { border-bottom: 1px solid #131313; transition: background 0.15s; }

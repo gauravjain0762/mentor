@@ -138,19 +138,6 @@ export default function OperationalPage() {
               </div>
             </div>
 
-            {/* Bottom row: search */}
-            <div className={styles.searchWrap}>
-              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" className={styles.searchIcon}>
-                <circle cx="11" cy="11" r="7" stroke="currentColor" strokeWidth="2"/>
-                <line x1="16.5" y1="16.5" x2="22" y2="22" stroke="currentColor" strokeWidth="2" strokeLinecap="round"/>
-              </svg>
-              <input
-                className={styles.searchInput}
-                placeholder="Search PT, notes, or activity..."
-                value={search}
-                onChange={(e) => setSearch(e.target.value)}
-              />
-            </div>
           </div>
 
           {/* Stats */}
@@ -180,6 +167,20 @@ export default function OperationalPage() {
                 <p className={styles.statValue}>12 Logs</p>
               </div>
             </div>
+          </div>
+
+          {/* Search */}
+          <div className={styles.searchWrap}>
+            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" className={styles.searchIcon}>
+              <circle cx="11" cy="11" r="7" stroke="currentColor" strokeWidth="2"/>
+              <line x1="16.5" y1="16.5" x2="22" y2="22" stroke="currentColor" strokeWidth="2" strokeLinecap="round"/>
+            </svg>
+            <input
+              className={styles.searchInput}
+              placeholder="Search PT, notes, or activity..."
+              value={search}
+              onChange={(e) => setSearch(e.target.value)}
+            />
           </div>
 
           {/* Table */}

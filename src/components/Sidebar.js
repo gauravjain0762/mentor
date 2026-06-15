@@ -87,7 +87,7 @@ export default function Sidebar() {
       {/* Logo */}
       <a href="/dashboard" className={styles.logoLink}>
         <Image
-          src="https://res.cloudinary.com/dbazlbkfj/image/upload/v1771390209/Layer_x0020_1_p5f6fs.png"
+          src="https://res.cloudinary.com/dbazlbkfj/image/upload/v1781515780/Layer_x0020_1_1_klnh94.png"
           alt="UPT"
           width={collapsed ? 38 : 140}
           height={collapsed ? 38 : 44}
