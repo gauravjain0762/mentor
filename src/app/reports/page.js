@@ -1,65 +1,11 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import Image from "next/image";
 import Sidebar from "@/components/Sidebar";
 import TopBar from "@/components/TopBar";
 import styles from "./page.module.css";
-
-const TICKETS = [
-  {
-    id: "TR-4029",
-    trainer: { name: "Marcus Thorne", img: "https://i.pravatar.cc/150?img=15" },
-    reporter: "L. Kensington",
-    category: "CONDUCT",
-    priority: "CRITICAL",
-    status: "OPEN",
-    date: "Oct 24, 2024",
-  },
-  {
-    id: "TR-3991",
-    trainer: { name: "Elena Vance", img: "https://i.pravatar.cc/150?img=11" },
-    reporter: "S. Hashimoto",
-    category: "TECHNICAL",
-    priority: "ROUTINE",
-    status: "PENDING",
-    date: "Oct 23, 2024",
-  },
-  {
-    id: "TR-3985",
-    trainer: { name: "Dorian Gray", img: "https://i.pravatar.cc/150?img=17" },
-    reporter: "Admin Sync",
-    category: "PERFORMANCE",
-    priority: "HIGH",
-    status: "RESOLVED",
-    date: "Oct 21, 2024",
-  },
-  {
-    id: "TR-3972",
-    trainer: { name: "Alistair Sterling", img: "https://i.pravatar.cc/150?img=12" },
-    reporter: "J. Mercer",
-    category: "CONDUCT",
-    priority: "HIGH",
-    status: "OPEN",
-    date: "Oct 20, 2024",
-  },
-  {
-    id: "TR-3960",
-    trainer: { name: "Evelyn Cross", img: "https://i.pravatar.cc/150?img=5" },
-    reporter: "M. Dantes",
-    category: "TECHNICAL",
-    priority: "ROUTINE",
-    status: "RESOLVED",
-    date: "Oct 19, 2024",
-  },
-];
-
-const ACTIVITY = [
-  { id: 1, text: "System automatically upgraded", link: "TR-4029", suffix: "to Critical.", time: "2 minutes ago", dot: "yellow" },
-  { id: 2, text: "Lead Admin Cmdr. Vael assigned to TR-3991.", time: "14 minutes ago", dot: "green" },
-  { id: 3, text: "New report submitted for Trainer Marcus Thorne.", time: "1 hour ago", dot: "yellow" },
-  { id: 4, text: "TR-3960 closed after resolution confirmed.", time: "3 hours ago", dot: "green" },
-];
+import { apiFetch } from "@/lib/api";
 
 const PRIORITY_META = {
   CRITICAL: { dot: styles.dotRed,    label: "CRITICAL" },
@@ -69,7 +15,7 @@ const PRIORITY_META = {
 
 const STATUS_META = {
   OPEN:     styles.statusOpen,
-  PENDING:  styles.statusPending,
+  IN_REVIEW: styles.statusPending,
   RESOLVED: styles.statusResolved,
 };
 
@@ -80,13 +26,86 @@ const CATEGORY_META = {
 };
 
 export default function ReportsPage() {
-  const [search,  setSearch]  = useState("");
-  const [view,    setView]    = useState("All Reports");
+  const [reports, setReports] = useState([]);
+  const [activities, setActivities] = useState([]);
+  const [summary, setSummary] = useState(null);
+  const [stats, setStats] = useState(null);
+  const [search, setSearch] = useState("");
+  const [statusFilter, setStatusFilter] = useState("all");
+  const [priorityFilter, setPriorityFilter] = useState("all");
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState("");
+  const [currentPage, setCurrentPage] = useState(1);
 
-  const filtered = TICKETS.filter((t) =>
+  useEffect(() => {
+    fetchAllData();
+  }, [statusFilter, priorityFilter, currentPage]);
+
+  async function fetchAllData() {
+    try {
+      setLoading(true);
+      const params = new URLSearchParams();
+      if (statusFilter !== "all") params.append("status", statusFilter.toUpperCase());
+      if (priorityFilter !== "all") params.append("priority", priorityFilter.toUpperCase());
+      if (search) params.append("search", search);
+      params.append("page", currentPage);
+      params.append("limit", "20");
+
+      const [reportsData, activitiesData, summaryData, statsData] = await Promise.all([
+        apiFetch(`/api/mentor/reports?${params.toString()}`),
+        apiFetch("/api/mentor/reports/activity/feed?limit=10"),
+        apiFetch("/api/mentor/reports/summary"),
+        apiFetch("/api/mentor/reports/stats?period=month"),
+      ]);
+
+      setReports(reportsData.data?.reports || []);
+      setActivities(activitiesData.data?.activities || []);
+      setSummary(summaryData.data?.summary || {});
+      setStats(statsData.data?.stats || {});
+      setError("");
+    } catch (err) {
+      setError(err.message || "Failed to load reports");
+    } finally {
+      setLoading(false);
+    }
+  }
+
+  async function handleStatusUpdate(reportId, newStatus) {
+    try {
+      await apiFetch(`/api/mentor/reports/${reportId}`, {
+        method: "PUT",
+        body: JSON.stringify({ status: newStatus }),
+      });
+      fetchAllData();
+    } catch (err) {
+      console.error("Failed to update report:", err);
+    }
+  }
+
+  const filtered = reports.filter((t) =>
     !search ||
     t.id.toLowerCase().includes(search.toLowerCase()) ||
-    t.trainer.name.toLowerCase().includes(search.toLowerCase())
+    t.trainerName.toLowerCase().includes(search.toLowerCase())
+  );
+
+  if (loading) return (
+    <div className={styles.layout}>
+      <Sidebar />
+      <main className={styles.main}>
+        <TopBar />
+        <div style={{ display: "flex", alignItems: "center", justifyContent: "center", height: "calc(100vh - 120px)", color: "#666" }}>Loading reports...</div>
+      </main>
+    </div>
+  );
+
+  if (error) return (
+    <div className={styles.layout}>
+      <Sidebar />
+      <main className={styles.main}>
+        <TopBar />
+        <div style={{ display: "flex", alignItems: "center", justifyContent: "center", height: "calc(100vh - 120px)", color: "#ff6b6b" }}>{error}</div>
+      </main>
+    </div>
   );
 
   return (
@@ -101,7 +120,7 @@ export default function ReportsPage() {
           <div className={styles.pageHead}>
             <div>
               <h1 className={styles.pageTitle}>Support Reports</h1>
-              <p className={styles.pageSubtitle}>Manage and resolve user support requests across the Aethelgard platform.</p>
+              <p className={styles.pageSubtitle}>Manage and resolve trainer-related reports and incidents.</p>
             </div>
           </div>
 
@@ -117,8 +136,8 @@ export default function ReportsPage() {
               </div>
               <div>
                 <p className={styles.statLabel}>OPEN TICKETS</p>
-                <p className={styles.statValue}>24</p>
-                <span className={styles.badgeStat + " " + styles.badgeGreen}>25% vs last week</span>
+                <p className={styles.statValue}>{summary?.openCount || 0}</p>
+                <span className={styles.badgeStat + " " + styles.badgeGreen}>Active</span>
               </div>
             </div>
 
@@ -131,8 +150,8 @@ export default function ReportsPage() {
               </div>
               <div>
                 <p className={styles.statLabel}>RESOLVED</p>
-                <p className={styles.statValue}>156</p>
-                <span className={styles.badgeStat + " " + styles.badgeGrey}>Total lifetime</span>
+                <p className={styles.statValue}>{stats?.resolvedReports || 0}</p>
+                <span className={styles.badgeStat + " " + styles.badgeGrey}>This period</span>
               </div>
             </div>
 
@@ -145,9 +164,9 @@ export default function ReportsPage() {
                 </svg>
               </div>
               <div>
-                <p className={styles.statLabel}>HIGH PRIORITY</p>
-                <p className={styles.statValueRed}>08</p>
-                <span className={styles.badgeStat + " " + styles.badgeRed}>Critical Attention Required</span>
+                <p className={styles.statLabel}>CRITICAL</p>
+                <p className={styles.statValueRed}>{summary?.criticalCount || 0}</p>
+                <span className={styles.badgeStat + " " + styles.badgeRed}>Needs Action</span>
               </div>
             </div>
 
@@ -161,9 +180,9 @@ export default function ReportsPage() {
                 </svg>
               </div>
               <div>
-                <p className={styles.statLabel}>TOTAL LOGS</p>
-                <p className={styles.statValue}>1,204</p>
-                <span className={styles.badgeStat + " " + styles.badgeGrey}>Active Database</span>
+                <p className={styles.statLabel}>TOTAL REPORTS</p>
+                <p className={styles.statValue}>{stats?.totalReports || 0}</p>
+                <span className={styles.badgeStat + " " + styles.badgeGrey}>All time</span>
               </div>
             </div>
           </div>
@@ -180,28 +199,21 @@ export default function ReportsPage() {
                   className={styles.searchInput}
                   placeholder="Filter by Trainer or ID"
                   value={search}
-                  onChange={(e) => setSearch(e.target.value)}
+                  onChange={(e) => { setSearch(e.target.value); setCurrentPage(1); }}
                 />
               </div>
-              <button className={styles.filterIconBtn}>
-                <svg width="15" height="15" viewBox="0 0 24 24" fill="none">
-                  <line x1="4" y1="6" x2="20" y2="6" stroke="currentColor" strokeWidth="2" strokeLinecap="round"/>
-                  <line x1="8" y1="12" x2="16" y2="12" stroke="currentColor" strokeWidth="2" strokeLinecap="round"/>
-                  <line x1="11" y1="18" x2="13" y2="18" stroke="currentColor" strokeWidth="2" strokeLinecap="round"/>
-                </svg>
-              </button>
-            </div>
-
-            <div className={styles.viewToggle}>
-              {["All Reports", "Priority", "Archive"].map((v) => (
-                <button
-                  key={v}
-                  className={`${styles.viewBtn} ${view === v ? styles.viewBtnActive : ""}`}
-                  onClick={() => setView(v)}
-                >
-                  {v}
-                </button>
-              ))}
+              <select className={styles.filterIconBtn} style={{ padding: "6px 10px", background: "none", border: "1px solid #333", borderRadius: "6px", color: "#aaa" }} value={statusFilter} onChange={(e) => { setStatusFilter(e.target.value); setCurrentPage(1); }}>
+                <option value="all">All Status</option>
+                <option value="open">Open</option>
+                <option value="in_review">In Review</option>
+                <option value="resolved">Resolved</option>
+              </select>
+              <select className={styles.filterIconBtn} style={{ padding: "6px 10px", background: "none", border: "1px solid #333", borderRadius: "6px", color: "#aaa" }} value={priorityFilter} onChange={(e) => { setPriorityFilter(e.target.value); setCurrentPage(1); }}>
+                <option value="all">All Priority</option>
+                <option value="critical">Critical</option>
+                <option value="high">High</option>
+                <option value="routine">Routine</option>
+              </select>
             </div>
           </div>
 
@@ -221,67 +233,68 @@ export default function ReportsPage() {
                 </tr>
               </thead>
               <tbody>
-                {filtered.map((row) => (
-                  <tr key={row.id} className={styles.tr}>
-                    <td className={styles.td}>
-                      <span className={styles.ticketId}>{row.id}</span>
-                    </td>
-                    <td className={styles.td}>
-                      <div className={styles.trainerCell}>
-                        <Image src={row.trainer.img} alt={row.trainer.name} width={28} height={28} unoptimized className={styles.avatar} />
-                        <span className={styles.trainerName}>{row.trainer.name}</span>
-                      </div>
-                    </td>
-                    <td className={styles.td}>
-                      <span className={styles.reporter}>{row.reporter}</span>
-                    </td>
-                    <td className={styles.td}>
-                      <span className={`${styles.catBadge} ${CATEGORY_META[row.category]}`}>{row.category}</span>
-                    </td>
-                    <td className={styles.td}>
-                      <div className={styles.priorityCell}>
-                        <span className={`${styles.priorityDot} ${PRIORITY_META[row.priority].dot}`} />
-                        <span className={styles.priorityText}>{row.priority}</span>
-                      </div>
-                    </td>
-                    <td className={styles.td}>
-                      <span className={`${styles.statusBadge} ${STATUS_META[row.status]}`}>{row.status}</span>
-                    </td>
-                    <td className={styles.td}>
-                      <span className={styles.dateText}>{row.date}</span>
-                    </td>
-                    <td className={styles.td}>
-                      <div className={styles.actions}>
-                        <button className={styles.actionBtn} title="View">
-                          <svg width="13" height="13" viewBox="0 0 24 24" fill="none">
-                            <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z" stroke="currentColor" strokeWidth="2"/>
-                            <circle cx="12" cy="12" r="3" stroke="currentColor" strokeWidth="2"/>
-                          </svg>
-                        </button>
-                        <button className={styles.actionBtn} title="Edit">
-                          <svg width="13" height="13" viewBox="0 0 24 24" fill="none">
-                            <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7" stroke="currentColor" strokeWidth="2" strokeLinecap="round"/>
-                            <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z" stroke="currentColor" strokeWidth="2" strokeLinecap="round"/>
-                          </svg>
-                        </button>
-                      </div>
-                    </td>
-                  </tr>
-                ))}
+                {filtered.length === 0 ? (
+                  <tr><td colSpan={8} style={{ textAlign: "center", padding: "20px", color: "#666" }}>No reports found</td></tr>
+                ) : (
+                  filtered.map((row) => (
+                    <tr key={row.id} className={styles.tr}>
+                      <td className={styles.td}>
+                        <span className={styles.ticketId}>{row.id}</span>
+                      </td>
+                      <td className={styles.td}>
+                        <div className={styles.trainerCell}>
+                          <Image src={row.trainerAvatar || "https://i.pravatar.cc/150?img=11"} alt={row.trainerName} width={28} height={28} unoptimized className={styles.avatar} />
+                          <span className={styles.trainerName}>{row.trainerName}</span>
+                        </div>
+                      </td>
+                      <td className={styles.td}>
+                        <span className={styles.reporter}>{row.reporterName}</span>
+                      </td>
+                      <td className={styles.td}>
+                        <span className={`${styles.catBadge} ${CATEGORY_META[row.category]}`}>{row.category}</span>
+                      </td>
+                      <td className={styles.td}>
+                        <div className={styles.priorityCell}>
+                          <span className={`${styles.priorityDot} ${PRIORITY_META[row.priority].dot}`} />
+                          <span className={styles.priorityText}>{row.priority}</span>
+                        </div>
+                      </td>
+                      <td className={styles.td}>
+                        <select className={`${styles.statusBadge} ${STATUS_META[row.status]}`} value={row.status} onChange={(e) => handleStatusUpdate(row.id, e.target.value)} style={{ background: "inherit", border: "none", color: "inherit", cursor: "pointer" }}>
+                          <option value="OPEN">Open</option>
+                          <option value="IN_REVIEW">In Review</option>
+                          <option value="RESOLVED">Resolved</option>
+                        </select>
+                      </td>
+                      <td className={styles.td}>
+                        <span className={styles.dateText}>{new Date(row.date).toLocaleDateString()}</span>
+                      </td>
+                      <td className={styles.td}>
+                        <div className={styles.actions}>
+                          <button className={styles.actionBtn} title="View">
+                            <svg width="13" height="13" viewBox="0 0 24 24" fill="none">
+                              <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z" stroke="currentColor" strokeWidth="2"/>
+                              <circle cx="12" cy="12" r="3" stroke="currentColor" strokeWidth="2"/>
+                            </svg>
+                          </button>
+                        </div>
+                      </td>
+                    </tr>
+                  ))
+                )}
               </tbody>
             </table>
 
             {/* Pagination */}
             <div className={styles.pagination}>
-              <span className={styles.pageInfo}>Showing 1-25 of 1,204 records</span>
+              <span className={styles.pageInfo}>Showing page {currentPage} of {Math.ceil((stats?.totalReports || 0) / 20) || 1}</span>
               <div className={styles.pageBtns}>
-                <button className={styles.pageArrow}>&#8249;</button>
-                <button className={`${styles.pageNum} ${styles.pageActive}`}>1</button>
-                <button className={styles.pageNum}>2</button>
-                <button className={styles.pageNum}>3</button>
+                <button className={styles.pageArrow} onClick={() => setCurrentPage(Math.max(1, currentPage - 1))} disabled={currentPage === 1}>&#8249;</button>
+                {[1, 2, 3].map((p) => (
+                  <button key={p} className={`${styles.pageNum} ${currentPage === p ? styles.pageActive : ""}`} onClick={() => setCurrentPage(p)}>{p}</button>
+                ))}
                 <span className={styles.pageDots}>...</span>
-                <button className={styles.pageNum}>48</button>
-                <button className={styles.pageArrow}>&#8250;</button>
+                <button className={styles.pageArrow} onClick={() => setCurrentPage(currentPage + 1)}>&#8250;</button>
               </div>
             </div>
           </div>
@@ -293,52 +306,55 @@ export default function ReportsPage() {
             <div className={styles.bottomCard}>
               <div className={styles.bottomCardHead}>
                 <span className={styles.bottomCardTitle}>Recent Activity Stream</span>
-                <span className={styles.syncBadge}>REAL-TIME SYNC</span>
+                <span className={styles.syncBadge}>LIVE</span>
               </div>
               <div className={styles.activityList}>
-                {ACTIVITY.map((a) => (
-                  <div key={a.id} className={styles.activityItem}>
-                    <span className={`${styles.activityDot} ${a.dot === "green" ? styles.actDotGreen : styles.actDotYellow}`} />
-                    <div>
-                      <p className={styles.activityText}>
-                        {a.text}{" "}
-                        {a.link && <span className={styles.activityLink}>{a.link}</span>}
-                        {a.suffix && " " + a.suffix}
-                      </p>
-                      <p className={styles.activityTime}>{a.time}</p>
+                {activities.length === 0 ? (
+                  <p style={{ color: "#666", padding: "10px 0" }}>No recent activities</p>
+                ) : (
+                  activities.map((a) => (
+                    <div key={a.id} className={styles.activityItem}>
+                      <span className={`${styles.activityDot} ${a.severity === "high" ? styles.actDotYellow : styles.actDotGreen}`} />
+                      <div>
+                        <p className={styles.activityText}>
+                          {a.text}
+                          {a.relatedReportId && <span className={styles.activityLink}>{a.relatedReportId}</span>}
+                        </p>
+                        <p className={styles.activityTime}>{new Date(a.timestamp).toLocaleDateString()}</p>
+                      </div>
                     </div>
-                  </div>
-                ))}
+                  ))
+                )}
               </div>
             </div>
 
-            {/* System Health */}
+            {/* Report Stats */}
             <div className={styles.bottomCard}>
               <div className={styles.bottomCardHead}>
-                <span className={styles.bottomCardTitle}>System Health</span>
+                <span className={styles.bottomCardTitle}>Report Statistics</span>
               </div>
               <div className={styles.healthList}>
                 <div className={styles.healthItem}>
                   <div className={styles.healthRow}>
-                    <span className={styles.healthLabel}>DATABASE LATENCY</span>
-                    <span className={styles.healthVal}>12ms</span>
+                    <span className={styles.healthLabel}>CRITICAL REPORTS</span>
+                    <span className={styles.healthVal}>{stats?.byPriority?.CRITICAL || 0}</span>
                   </div>
                   <div className={styles.progressTrack}>
-                    <div className={styles.progressBar} style={{ width: "18%" }} />
+                    <div className={styles.progressBar} style={{ width: `${Math.min(100, ((stats?.byPriority?.CRITICAL || 0) / (stats?.totalReports || 1)) * 100)}%`, background: "#ff6b6b" }} />
                   </div>
                 </div>
                 <div className={styles.healthItem}>
                   <div className={styles.healthRow}>
-                    <span className={styles.healthLabel}>TICKET LOAD</span>
-                    <span className={styles.healthVal}>Optimal</span>
+                    <span className={styles.healthLabel}>UNRESOLVED %</span>
+                    <span className={styles.healthVal}>{stats?.unresolvedPercentage || 0}%</span>
                   </div>
                   <div className={styles.progressTrack}>
-                    <div className={styles.progressBar} style={{ width: "65%" }} />
+                    <div className={styles.progressBar} style={{ width: `${stats?.unresolvedPercentage || 0}%` }} />
                   </div>
                 </div>
               </div>
               <p className={styles.healthFooter}>
-                All auxiliary systems are operating within nominal parameters for Sector 7 Admin Control.
+                {stats?.totalReports || 0} total reports tracked • Avg resolution: {stats?.avgResolutionTime || "N/A"}
               </p>
             </div>
 

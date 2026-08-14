@@ -1,29 +1,47 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import Sidebar from "@/components/Sidebar";
 import TopBar from "@/components/TopBar";
 import styles from "./page.module.css";
-
-const Y = "rgba(248,227,150,";
-
-const CHART = {
-  "7D": {
-    line: "M 0,185 C 70,183 110,178 150,168 C 200,155 240,118 295,62 C 340,20 390,14 450,12 C 510,10 560,10 600,10",
-    labels: ["SEP 01", "SEP 08", "SEP 15", "SEP 22", "SEP 30"],
-  },
-  "30D": {
-    line: "M 0,188 C 60,186 100,182 155,172 C 215,158 250,130 300,90 C 350,50 400,24 455,16 C 505,10 560,9 600,9",
-    labels: ["SEP 01", "SEP 08", "SEP 15", "SEP 22", "SEP 30"],
-  },
-};
+import { apiFetch } from "@/lib/api";
 
 const GRID_Y = [40, 80, 120, 160, 200];
 
-function Chart({ period }) {
-  const { line, labels } = CHART[period];
+function generatePathFromData(scores) {
+  if (!scores || scores.length === 0) return "M 0,190 L 600,190";
+
+  const maxScore = 5;
+  const minScore = 0;
+  const stepX = 600 / (scores.length - 1 || 1);
+
+  let path = "";
+  scores.forEach((score, i) => {
+    const x = i * stepX;
+    const y = 210 - ((score - minScore) / (maxScore - minScore)) * 190;
+    path += i === 0 ? `M ${x},${y}` : ` L ${x},${y}`;
+  });
+
+  return path;
+}
+
+function Chart({ period, data, labels }) {
+  if (!data || !data[period]) {
+    return (
+      <div className={styles.chartWrap}>
+        <svg viewBox="0 0 600 210" preserveAspectRatio="none" className={styles.svg}>
+          <text x="300" y="105" textAnchor="middle" fill="#666" fontSize="14">No data available</text>
+        </svg>
+      </div>
+    );
+  }
+
+  const scores = data[period];
+  const chartLabels = labels[period] || [];
+  const line = generatePathFromData(scores);
   const fill = `${line} L 600,210 L 0,210 Z`;
+
   return (
     <div className={styles.chartWrap}>
       <svg viewBox="0 0 600 210" preserveAspectRatio="none" className={styles.svg}>
@@ -42,7 +60,7 @@ function Chart({ period }) {
           strokeLinecap="round" strokeLinejoin="round" />
       </svg>
       <div className={styles.xAxis}>
-        {labels.map((l) => <span key={l}>{l}</span>)}
+        {chartLabels.map((l) => <span key={l}>{l}</span>)}
       </div>
     </div>
   );
@@ -51,6 +69,73 @@ function Chart({ period }) {
 export default function DashboardPage() {
   const router = useRouter();
   const [period, setPeriod] = useState("7D");
+  const [stats, setStats] = useState(null);
+  const [chartData, setChartData] = useState({ "7D": [], "30D": [] });
+  const [chartLabels, setChartLabels] = useState({ "7D": [], "30D": [] });
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState("");
+
+  useEffect(() => {
+    fetchDashboardData();
+  }, []);
+
+  useEffect(() => {
+    if (period && !chartData[period].length) {
+      fetchPerformanceData(period);
+    }
+  }, [period]);
+
+  async function fetchDashboardData() {
+    try {
+      setLoading(true);
+      const data = await apiFetch("/api/mentor/dashboard/overview");
+      setStats(data.data?.stats || {});
+      setError("");
+
+      await Promise.all([
+        fetchPerformanceData("7D"),
+        fetchPerformanceData("30D"),
+      ]);
+    } catch (err) {
+      setError(err.message || "Failed to load dashboard");
+      setStats({});
+    } finally {
+      setLoading(false);
+    }
+  }
+
+  async function fetchPerformanceData(per) {
+    try {
+      const data = await apiFetch(`/api/mentor/dashboard/performance-trajectory?period=${per}`);
+      const scores = data.data?.chartData?.map(d => d.score) || [];
+      const labels = data.data?.labels || [];
+
+      setChartData(prev => ({ ...prev, [per]: scores }));
+      setChartLabels(prev => ({ ...prev, [per]: labels }));
+    } catch (err) {
+      console.log(`Performance trajectory for ${per} not available`);
+    }
+  }
+
+  if (loading) return (
+    <div className={styles.page}>
+      <Sidebar />
+      <div className={styles.mainCol}>
+        <TopBar />
+        <div style={{ display: "flex", alignItems: "center", justifyContent: "center", height: "calc(100vh - 120px)", color: "#666" }}>Loading dashboard...</div>
+      </div>
+    </div>
+  );
+
+  if (error) return (
+    <div className={styles.page}>
+      <Sidebar />
+      <div className={styles.mainCol}>
+        <TopBar />
+        <div style={{ display: "flex", alignItems: "center", justifyContent: "center", height: "calc(100vh - 120px)", color: "#ff6b6b" }}>{error}</div>
+      </div>
+    </div>
+  );
 
   return (
     <div className={styles.page}>
@@ -73,10 +158,10 @@ export default function DashboardPage() {
           {/* Row 1 — 4 columns */}
           <div className={styles.row1}>
             {[
-              { label: "Total Assigned PTs", value: "24",  link: "/pt-dashboard" },
-              { label: "Active PTs",          value: "18", bar: true },
-              { label: "At-Risk PTs",         value: "3"  },
-              { label: "Clients Managed",     value: "482"},
+              { label: "Total Assigned PTs", key: "totalAssignedPTs",  link: "/pt-dashboard" },
+              { label: "Active PTs",          key: "activePTs", bar: true },
+              { label: "At-Risk PTs",         key: "atRiskPTs"  },
+              { label: "Clients Managed",     key: "clientsManaged"},
             ].map((s) => (
               <div
                 key={s.label}
@@ -84,7 +169,7 @@ export default function DashboardPage() {
                 onClick={() => s.link && router.push(s.link)}
               >
                 <p className={styles.statLabel}>{s.label}</p>
-                <p className={styles.statValue}>{s.value}</p>
+                <p className={styles.statValue}>{stats?.[s.key] || 0}</p>
                 {s.bar && <div className={styles.underBar} />}
               </div>
             ))}
@@ -92,9 +177,9 @@ export default function DashboardPage() {
           {/* Row 2 — 3 columns */}
           <div className={styles.row2}>
             {[
-              { label: "Avg Feedback Score",       value: "4.8",   link: "/trainer-review" },
-              { label: "Upcoming Check-ins",        value: "12"    },
-              { label: "Monthly Operational Hours", value: "1,240" },
+              { label: "Avg Feedback Score",       key: "avgFeedbackScore",   link: "/trainer-review" },
+              { label: "Upcoming Check-ins",       key: "upcomingCheckIns"    },
+              { label: "Monthly Operational Hours", key: "monthlyOperationalHours" },
             ].map((s) => (
               <div
                 key={s.label}
@@ -102,7 +187,7 @@ export default function DashboardPage() {
                 onClick={() => s.link && router.push(s.link)}
               >
                 <p className={styles.statLabel}>{s.label}</p>
-                <p className={styles.statValue}>{s.value}</p>
+                <p className={styles.statValue}>{s.key === "avgFeedbackScore" ? (stats?.[s.key] || 0).toFixed(1) : (stats?.[s.key] || 0).toLocaleString()}</p>
               </div>
             ))}
           </div>
@@ -125,7 +210,7 @@ export default function DashboardPage() {
               ))}
             </div>
           </div>
-          <Chart period={period} />
+          <Chart period={period} data={chartData} labels={chartLabels} />
         </div>
 
       </div>

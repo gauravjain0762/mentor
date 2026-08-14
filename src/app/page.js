@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import Image from "next/image";
 import { Cinzel } from "next/font/google";
 import styles from "./page.module.css";
+import { apiFetch } from "@/lib/api";
 
 const cinzel = Cinzel({ subsets: ["latin"], weight: ["600", "700", "900"] });
 
@@ -31,13 +32,31 @@ function CountUp({ target, decimals = 0, suffix = "", duration = 1800 }) {
 
 export default function LoginPage() {
   const router = useRouter();
-  const [email, setEmail] = useState("");
-  const [password, setPassword] = useState("");
+  const [email,    setEmail]    = useState("mentor@fitness.com");
+  const [password, setPassword] = useState("Mentor123");
   const [showPass, setShowPass] = useState(false);
+  const [loading,  setLoading]  = useState(false);
+  const [error,    setError]    = useState("");
 
-  function handleLogin(e) {
+  async function handleLogin(e) {
     e.preventDefault();
-    router.push("/dashboard");
+    setError("");
+    setLoading(true);
+    try {
+      const data = await apiFetch("/api/auth/mentor/login", {
+        method: "POST",
+        body: JSON.stringify({ email, password }),
+      });
+      if (data.data?.access_token) {
+        localStorage.setItem("token", data.data.access_token);
+        localStorage.setItem("refresh_token", data.data.refresh_token);
+      }
+      router.push("/dashboard");
+    } catch (err) {
+      setError(err.message || "Invalid credentials");
+    } finally {
+      setLoading(false);
+    }
   }
 
   return (
@@ -102,7 +121,7 @@ export default function LoginPage() {
                 <input
                   className={styles.input}
                   type="email"
-                  placeholder="mentor@uptgym.com"
+                  placeholder="mentor@fitness.com"
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
                 />
@@ -119,7 +138,7 @@ export default function LoginPage() {
                 <input
                   className={styles.input}
                   type={showPass ? "text" : "password"}
-                  placeholder="••••••••••"
+                  placeholder="Mentor123"
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
                 />
@@ -144,8 +163,10 @@ export default function LoginPage() {
               <span className={styles.forgotLink}>Forgot Password?</span>
             </div>
 
-            <button className={`${styles.loginBtn} ${cinzel.className}`} type="submit">
-              Sign In to Dashboard
+            {error && <p className={styles.errorMsg}>{error}</p>}
+
+            <button className={`${styles.loginBtn} ${cinzel.className}`} type="submit" disabled={loading}>
+              {loading ? "Signing In..." : "Sign In to Dashboard"}
             </button>
 
           </form>

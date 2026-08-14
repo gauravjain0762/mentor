@@ -1,84 +1,12 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import Image from "next/image";
 import Sidebar from "@/components/Sidebar";
 import TopBar from "@/components/TopBar";
 import styles from "./page.module.css";
-
-const TRAINERS = [
-  {
-    name: "Julian Vance",
-    tier: "Elite Tier Trainer",
-    gym: "Nexus Central Hub",
-    location: "London, UK",
-    initials: "JV",
-    img: "https://i.pravatar.cc/150?img=11",
-    activeClients: 42,
-    newClients: 5,
-    retention: 78,
-    rating: 4.2,
-    aiScore: 62,
-    status: "warning",
-  },
-  {
-    name: "Alistair Sterling",
-    tier: "Elite Tier Trainer",
-    gym: "Nexus South Hub",
-    location: "London, UK",
-    initials: "AS",
-    img: "https://i.pravatar.cc/150?img=12",
-    activeClients: 38,
-    newClients: 4,
-    retention: 82,
-    rating: 4.5,
-    aiScore: 78,
-    status: "healthy",
-  },
-  {
-    name: "Evelyn Cross",
-    tier: "Pro Tier Trainer",
-    gym: "Vanguard East",
-    location: "Manchester, UK",
-    initials: "EC",
-    img: "https://i.pravatar.cc/150?img=5",
-    activeClients: 25,
-    newClients: 2,
-    retention: 65,
-    rating: 3.8,
-    aiScore: 52,
-    status: "critical",
-  },
-  {
-    name: "Marcus Thorne",
-    tier: "Elite Tier Trainer",
-    gym: "Obsidian West",
-    location: "London, UK",
-    initials: "MT",
-    img: "https://i.pravatar.cc/150?img=15",
-    activeClients: 42,
-    newClients: 6,
-    retention: 88,
-    rating: 4.9,
-    aiScore: 91,
-    status: "healthy",
-  },
-  {
-    name: "Danny Olive",
-    tier: "Elite Tier Trainer",
-    gym: "Nexus Central Hub",
-    location: "London, UK",
-    initials: "DO",
-    img: "https://i.pravatar.cc/150?img=17",
-    activeClients: 42,
-    newClients: 5,
-    retention: 78,
-    rating: 4.2,
-    aiScore: 62,
-    status: "warning",
-  },
-];
+import { apiFetch } from "@/lib/api";
 
 function RetentionBar({ pct }) {
   const color = pct >= 85 ? "#22c55e" : pct >= 75 ? "#f8e396" : pct >= 65 ? "#ffaa44" : "#ff6b6b";
@@ -116,12 +44,56 @@ export default function PTDashboardPage() {
   const router = useRouter();
   const [page, setPage] = useState(1);
   const [openMenu, setOpenMenu] = useState(null);
+  const [trainers, setTrainers] = useState([]);
+  const [stats, setStats] = useState({ total: 0, healthy: 0, warnings: 0, critical: 0 });
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState("");
+
+  useEffect(() => {
+    fetchTrainers();
+  }, []);
+
+  async function fetchTrainers() {
+    try {
+      setLoading(true);
+      const data = await apiFetch("/api/mentor/assigned-pts?sort=rating&limit=10");
+      const pts = data.data?.pts || [];
+
+      setTrainers(pts.map((pt) => ({
+        id: pt.id,
+        name: pt.name,
+        tier: pt.experience > 5 ? "Elite Tier Trainer" : "Pro Tier Trainer",
+        gym: "Nexus Central Hub",
+        location: pt.location || "London, UK",
+        img: pt.avatar || "https://i.pravatar.cc/150?img=11",
+        activeClients: pt.activeClients || 0,
+        newClients: pt.newClients || 0,
+        retention: pt.retention || 75,
+        rating: pt.rating || 4.0,
+        aiScore: Math.round(pt.rating * 20) || 60,
+        status: pt.rating >= 4.5 ? "healthy" : pt.rating >= 4.0 ? "warning" : "critical",
+      })));
+
+      setStats({
+        total: data.data?.total || 0,
+        healthy: pts.filter((p) => p.rating >= 4.5).length,
+        warnings: pts.filter((p) => p.rating >= 4.0 && p.rating < 4.5).length,
+        critical: pts.filter((p) => p.rating < 4.0).length,
+      });
+      setError("");
+    } catch (err) {
+      setError(err.message || "Failed to load trainers");
+      setTrainers([]);
+    } finally {
+      setLoading(false);
+    }
+  }
 
   function toggleMenu(name) {
     setOpenMenu((prev) => (prev === name ? null : name));
   }
 
-  const filtered = TRAINERS;
+  const filtered = trainers;
 
   return (
     <div className={styles.layout}>
@@ -164,28 +136,27 @@ export default function PTDashboardPage() {
             <div className={`${styles.statCard} ${styles.statDefault}`}>
               <p className={styles.statLabel}>TOTAL PERSONNEL</p>
               <div className={styles.statValueRow}>
-                <span className={styles.statValue}>142</span>
-                {/* <span className={styles.statDelta}>+12% vs LY</span> */}
+                <span className={styles.statValue}>{stats.total}</span>
               </div>
             </div>
             <div className={`${styles.statCard} ${styles.statGreen}`}>
               <p className={styles.statLabel}>HEALTHY STATUS</p>
               <div className={styles.statValueRow}>
-                <span className={styles.statValue}>128</span>
+                <span className={styles.statValue}>{stats.healthy}</span>
                 <span className={styles.statSub}>Personnel Clear</span>
               </div>
             </div>
             <div className={`${styles.statCard} ${styles.statYellow}`}>
               <p className={styles.statLabel}>WARNINGS</p>
               <div className={styles.statValueRow}>
-                <span className={styles.statValue}>9</span>
+                <span className={styles.statValue}>{stats.warnings}</span>
                 <span className={styles.statSub}>Intervention Required</span>
               </div>
             </div>
             <div className={`${styles.statCard} ${styles.statRed}`}>
               <p className={styles.statLabel}>CRITICAL ALERTS</p>
               <div className={styles.statValueRow}>
-                <span className={styles.statValue}>5</span>
+                <span className={styles.statValue}>{stats.critical}</span>
                 <span className={styles.statSub}>Escalate Immediately</span>
               </div>
             </div>
@@ -193,6 +164,9 @@ export default function PTDashboardPage() {
 
           {/* Table */}
           <div className={styles.tableWrap}>
+            {loading && <p style={{ padding: "20px", textAlign: "center" }}>Loading trainers...</p>}
+            {error && <p style={{ padding: "20px", textAlign: "center", color: "#ff6b6b" }}>{error}</p>}
+            {!loading && !error && (
             <table className={styles.table}>
               <thead>
                 <tr className={styles.thead}>
@@ -263,7 +237,13 @@ export default function PTDashboardPage() {
                               </svg>
                               Chat
                             </button>
-                            <button className={styles.dropItem} onClick={() => setOpenMenu(null)}>
+                            <button
+                              className={styles.dropItem}
+                              onClick={() => {
+                                setOpenMenu(null);
+                                router.push(`/pt-profile/${t.id}`);
+                              }}
+                            >
                               <svg width="14" height="14" viewBox="0 0 24 24" fill="none">
                                 <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z" stroke="currentColor" strokeWidth="1.8"/>
                                 <circle cx="12" cy="12" r="3" stroke="currentColor" strokeWidth="1.8"/>
@@ -278,11 +258,13 @@ export default function PTDashboardPage() {
                 ))}
               </tbody>
             </table>
+            )}
           </div>
 
           {/* Pagination */}
+          {!loading && !error && (
           <div className={styles.pagination}>
-            <span className={styles.pageInfo}>Showing 1 to {filtered.length} of 142 Personnel</span>
+            <span className={styles.pageInfo}>Showing 1 to {filtered.length} of {stats.total} Personnel</span>
             <div className={styles.pageBtns}>
               <button className={styles.pageArrow} disabled>
                 <svg width="13" height="13" viewBox="0 0 24 24" fill="none">
@@ -303,6 +285,7 @@ export default function PTDashboardPage() {
               </button>
             </div>
           </div>
+          )}
         </div>
       </main>
     </div>

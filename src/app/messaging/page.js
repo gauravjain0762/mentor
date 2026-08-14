@@ -6,104 +6,7 @@ import Image from "next/image";
 import Sidebar from "@/components/Sidebar";
 import TopBar from "@/components/TopBar";
 import styles from "./page.module.css";
-
-const GROUPS = [
-  {
-    id: 1,
-    name: "Sgt. Valerius, Master Kaelen & Operative Aria",
-    sub: "Aethelgard High Command Fitness",
-    lastMsg: "The sector 7 perime...",
-    time: "14:22",
-    secure: true,
-    members: [
-      { name: "Julian Vance",      img: "https://i.pravatar.cc/150?img=11" },
-      { name: "Alistair Sterling", img: "https://i.pravatar.cc/150?img=12" },
-      { name: "Evelyn Cross",      img: "https://i.pravatar.cc/150?img=5"  },
-    ],
-    messages: [
-      { id: 1, sender: "Julian Vance",      img: "https://i.pravatar.cc/150?img=11", text: "Administrator, I've concluded the review of the current personnel roster. The recent optimizations in Sector 4 are yielding better-than-expected throughput. Find the detailed report attached below.", highlights: ["optimizations in Sector 4", "yielding", "Find the"], time: "14:15" },
-      { id: 2, sender: "Julian Vance",      img: "https://i.pravatar.cc/150?img=11", type: "file", fileName: "Performance Report.pdf", fileSize: "2.4 MB · High Security Level", time: "14:15" },
-      { id: 3, sender: "Alistair Sterling", img: "https://i.pravatar.cc/150?img=12", text: "Scanners in Sector 4 are reporting minor interference on the secondary uplink. Investigating now.", highlights: ["Sector 4", "secondary uplink"], time: "14:17" },
-      { id: 4, sender: "me", text: "Acknowledged, Sergeant. I'll review the metrics within the hour. Keep the high-frequency scanners active in that quadrant until my further notice.", highlights: ["high-frequency scanners"], time: "14:18" },
-    ],
-  },
-  {
-    id: 2,
-    name: "Commander Thorne, Operative Olive & Agent Cross",
-    sub: "Aethelgard High Command Fitness",
-    lastMsg: "All perimeter checks confirmed.",
-    time: "13:40",
-    secure: false,
-    members: [
-      { name: "Marcus Thorne", img: "https://i.pravatar.cc/150?img=15" },
-      { name: "Danny Olive",   img: "https://i.pravatar.cc/150?img=17" },
-      { name: "Evelyn Cross",  img: "https://i.pravatar.cc/150?img=5"  },
-    ],
-    messages: [
-      { id: 1, sender: "Marcus Thorne", img: "https://i.pravatar.cc/150?img=15", text: "Weekly readiness report submitted. All units at optimal capacity.", time: "13:10" },
-      { id: 2, sender: "Danny Olive",   img: "https://i.pravatar.cc/150?img=17", text: "Confirmed. Sector B training logs have been uploaded to the secure archive.", time: "13:18" },
-      { id: 3, sender: "me", text: "Good work. Ensure the evening debrief is logged by 22:00 hours.", time: "13:30" },
-      { id: 4, sender: "Marcus Thorne", img: "https://i.pravatar.cc/150?img=15", text: "All perimeter checks confirmed.", time: "13:40" },
-    ],
-  },
-  {
-    id: 3,
-    name: "Agent Vance, Operative Sterling & Cmd. Thorne",
-    sub: "Aethelgard High Command Fitness",
-    lastMsg: "Protocol Delta is live.",
-    time: "11:55",
-    secure: true,
-    members: [
-      { name: "Julian Vance",      img: "https://i.pravatar.cc/150?img=11" },
-      { name: "Alistair Sterling", img: "https://i.pravatar.cc/150?img=12" },
-      { name: "Marcus Thorne",     img: "https://i.pravatar.cc/150?img=15" },
-    ],
-    messages: [
-      { id: 1, sender: "Alistair Sterling", img: "https://i.pravatar.cc/150?img=12", text: "New intake cohort briefed. Compliance rate across the board is above 90%.", time: "11:30" },
-      { id: 2, sender: "Julian Vance",      img: "https://i.pravatar.cc/150?img=11", text: "Protocol Delta has been approved by high command. Implementation begins at 06:00.", time: "11:45" },
-      { id: 3, sender: "me", text: "Proceed as planned. Notify me if any resistance is detected during rollout.", time: "11:50" },
-      { id: 4, sender: "Marcus Thorne",     img: "https://i.pravatar.cc/150?img=15", text: "Protocol Delta is live.", time: "11:55" },
-    ],
-  },
-  {
-    id: 4,
-    name: "Cmd. Cross, Agent Olive & Operative Vance",
-    sub: "Aethelgard High Command Fitness",
-    lastMsg: "Nutrition logs filed for Q4.",
-    time: "10:12",
-    secure: false,
-    members: [
-      { name: "Evelyn Cross",  img: "https://i.pravatar.cc/150?img=5"  },
-      { name: "Danny Olive",   img: "https://i.pravatar.cc/150?img=17" },
-      { name: "Julian Vance",  img: "https://i.pravatar.cc/150?img=11" },
-    ],
-    messages: [
-      { id: 1, sender: "Evelyn Cross", img: "https://i.pravatar.cc/150?img=5",  text: "Q4 nutrition and recovery protocols have been distributed to all assigned clients.", time: "09:45" },
-      { id: 2, sender: "Danny Olive",  img: "https://i.pravatar.cc/150?img=17", text: "Client feedback from last week's sessions has been compiled. Overall sentiment is positive.", time: "09:52" },
-      { id: 3, sender: "me", text: "Good. Attach the feedback summary to this week's performance review packet.", time: "10:05" },
-      { id: 4, sender: "Evelyn Cross", img: "https://i.pravatar.cc/150?img=5",  text: "Nutrition logs filed for Q4.", time: "10:12" },
-    ],
-  },
-  {
-    id: 5,
-    name: "Operative Thorne, Agent Sterling & Cmd. Olive",
-    sub: "Aethelgard High Command Fitness",
-    lastMsg: "Night shift handover complete.",
-    time: "08:30",
-    secure: false,
-    members: [
-      { name: "Marcus Thorne",     img: "https://i.pravatar.cc/150?img=15" },
-      { name: "Alistair Sterling", img: "https://i.pravatar.cc/150?img=12" },
-      { name: "Danny Olive",       img: "https://i.pravatar.cc/150?img=17" },
-    ],
-    messages: [
-      { id: 1, sender: "Marcus Thorne",     img: "https://i.pravatar.cc/150?img=15", text: "Morning briefing completed. All stations are fully staffed and operational.", time: "08:05" },
-      { id: 2, sender: "Alistair Sterling", img: "https://i.pravatar.cc/150?img=12", text: "Equipment checks passed across all training floors. No faults detected.", time: "08:15" },
-      { id: 3, sender: "me", text: "Noted. Ensure the incident register is updated before the 09:00 review.", time: "08:22" },
-      { id: 4, sender: "Danny Olive",       img: "https://i.pravatar.cc/150?img=17", text: "Night shift handover complete.", time: "08:30" },
-    ],
-  },
-];
+import { apiFetch } from "@/lib/api";
 
 function HighlightText({ text, highlights }) {
   if (!highlights?.length) return <span>{text}</span>;
@@ -149,18 +52,67 @@ function StackedAvatars({ members, size, offset, borderColor }) {
 
 function MessagingContent() {
   const searchParams = useSearchParams();
-  const [active, setActive] = useState(GROUPS[0]);
+  const [conversations, setConversations] = useState([]);
+  const [active, setActive] = useState(null);
+  const [messages, setMessages] = useState([]);
+  const [input, setInput] = useState("");
+  const [loading, setLoading] = useState(true);
+  const [msgLoading, setMsgLoading] = useState(false);
+  const [error, setError] = useState("");
 
   useEffect(() => {
-    const name = searchParams.get("trainer");
-    if (name) {
-      const decoded = decodeURIComponent(name);
-      const found = GROUPS.find(g => g.members.some(m => m.name === decoded));
-      if (found) setActive(found);
-    }
-  }, [searchParams]);
+    fetchConversations();
+  }, []);
 
-  const [input, setInput] = useState("");
+  async function fetchConversations() {
+    try {
+      setLoading(true);
+      const data = await apiFetch("/api/mentor/messages/conversations");
+      const convs = data.data?.conversations || [];
+      setConversations(convs);
+      if (convs.length > 0) {
+        setActive(convs[0]);
+        fetchMessages(convs[0].id);
+      }
+      setError("");
+    } catch (err) {
+      setError(err.message || "Failed to load conversations");
+      setConversations([]);
+    } finally {
+      setLoading(false);
+    }
+  }
+
+  async function fetchMessages(convId) {
+    try {
+      setMsgLoading(true);
+      const data = await apiFetch(`/api/mentor/messages/conversations/${convId}`);
+      setMessages(data.data?.messages || []);
+    } catch (err) {
+      console.error("Failed to load messages:", err);
+    } finally {
+      setMsgLoading(false);
+    }
+  }
+
+  async function handleSendMessage() {
+    if (!input.trim() || !active) return;
+    try {
+      await apiFetch("/api/mentor/messages/send", {
+        method: "POST",
+        body: JSON.stringify({ conversationId: active.id, ptId: active.ptId, message: input }),
+      });
+      setInput("");
+      fetchMessages(active.id);
+    } catch (err) {
+      console.error("Failed to send message:", err);
+    }
+  }
+
+  const handleSelectConversation = (conv) => {
+    setActive(conv);
+    fetchMessages(conv.id);
+  };
 
   return (
     <div className={styles.layout}>
@@ -183,23 +135,34 @@ function MessagingContent() {
             </div>
 
             <div className={styles.convList}>
-              {GROUPS.map((g) => (
-                <div
-                  key={g.id}
-                  className={`${styles.convItem} ${active.id === g.id ? styles.convActive : ""}`}
-                  onClick={() => setActive(g)}
-                >
-                  <StackedAvatars members={g.members} size={28} offset={13} />
-
-                  <div className={styles.convInfo}>
-                    <div className={styles.convTop}>
-                      <span className={styles.convName}>{g.name}</span>
-                      <span className={styles.convTime}>{g.time}</span>
+              {loading ? (
+                <div style={{ padding: "20px", textAlign: "center", color: "#666" }}>Loading conversations...</div>
+              ) : error ? (
+                <div style={{ padding: "20px", textAlign: "center", color: "#ff6b6b" }}>{error}</div>
+              ) : conversations.length === 0 ? (
+                <div style={{ padding: "20px", textAlign: "center", color: "#666" }}>No conversations yet</div>
+              ) : (
+                conversations.map((conv) => (
+                  <div
+                    key={conv.id}
+                    className={`${styles.convItem} ${active?.id === conv.id ? styles.convActive : ""}`}
+                    onClick={() => handleSelectConversation(conv)}
+                  >
+                    <div style={{ width: 28, height: 28, flexShrink: 0, borderRadius: 6, overflow: "hidden" }}>
+                      <Image src={conv.ptAvatar} alt={conv.ptName} width={28} height={28} unoptimized style={{ borderRadius: 6, objectFit: "cover" }} />
                     </div>
-                    <p className={styles.convPreview}>{g.lastMsg}</p>
+
+                    <div className={styles.convInfo}>
+                      <div className={styles.convTop}>
+                        <span className={styles.convName}>{conv.ptName}</span>
+                        <span className={styles.convTime}>{new Date(conv.lastMessageTime).toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' })}</span>
+                      </div>
+                      <p className={styles.convPreview}>{conv.lastMessage || "No messages yet"}</p>
+                    </div>
+                    {conv.unreadCount > 0 && <span style={{ background: "#f8e396", color: "#111", borderRadius: 10, padding: "2px 6px", fontSize: 11, fontWeight: 600 }}>{conv.unreadCount}</span>}
                   </div>
-                </div>
-              ))}
+                ))
+              )}
             </div>
           </aside>
 
@@ -207,96 +170,62 @@ function MessagingContent() {
           <main className={styles.chatMain}>
 
             {/* Header */}
+            {active && (
             <div className={styles.chatHeader}>
               <div className={styles.chatHeaderLeft}>
-                <StackedAvatars members={active.members} size={36} offset={18} borderColor="#0a0a0a" />
-                <div style={{ marginLeft: 8 }}>
-                  <p className={styles.chatHeaderName}>{active.name}</p>
-                  <p className={styles.chatHeaderSub}>{active.sub}</p>
+                <Image src={active.ptAvatar} alt={active.ptName} width={36} height={36} unoptimized style={{ borderRadius: 8, objectFit: "cover" }} />
+                <div style={{ marginLeft: 12 }}>
+                  <p className={styles.chatHeaderName}>{active.ptName}</p>
                 </div>
               </div>
             </div>
+            )}
 
             {/* Messages */}
             <div className={styles.messages}>
-              <div className={styles.dateSep}>
-                <span className={styles.dateLine} />
-                <span className={styles.dateLabel}>OCTOBER 24, 2077</span>
-                <span className={styles.dateLine} />
-              </div>
+              {msgLoading ? (
+                <div style={{ textAlign: "center", padding: "40px", color: "#666" }}>Loading messages...</div>
+              ) : messages.length === 0 ? (
+                <div style={{ textAlign: "center", padding: "40px", color: "#666" }}>No messages yet. Start the conversation!</div>
+              ) : (
+                <>
+                  <div className={styles.dateSep}>
+                    <span className={styles.dateLine} />
+                    <span className={styles.dateLabel}>{new Date(messages[0].timestamp).toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' }).toUpperCase()}</span>
+                    <span className={styles.dateLine} />
+                  </div>
 
-              {active.messages.map((msg) => (
-                <div
-                  key={msg.id}
-                  className={`${styles.msgRow} ${msg.sender === "me" ? styles.msgRowMe : ""}`}
-                >
-                  {msg.sender !== "me" && (
-                    <Image
-                      src={msg.img}
-                      alt={msg.sender}
-                      width={28}
-                      height={28}
-                      unoptimized
-                      className={styles.msgAvatar}
-                    />
-                  )}
+                  {messages.map((msg) => (
+                    <div key={msg.id} className={`${styles.msgRow} ${msg.senderType === "mentor" ? styles.msgRowMe : ""}`}>
+                      {msg.senderType !== "mentor" && (
+                        <Image src={active.ptAvatar} alt={msg.senderName} width={28} height={28} unoptimized className={styles.msgAvatar} />
+                      )}
 
-                  <div className={styles.msgContent}>
-                    {msg.type === "file" ? (
-                      <>
-                        <div className={styles.fileCard}>
-                          <div className={styles.fileIcon}>
-                            <svg width="15" height="15" viewBox="0 0 24 24" fill="none">
-                              <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" stroke="#f8e396" strokeWidth="2" strokeLinecap="round"/>
-                              <polyline points="14 2 14 8 20 8" stroke="#f8e396" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
-                            </svg>
-                          </div>
-                          <div className={styles.fileInfo}>
-                            <p className={styles.fileName}>{msg.fileName}</p>
-                            <p className={styles.fileSize}>{msg.fileSize}</p>
-                          </div>
-                          <button className={styles.downloadBtn}>
-                            <svg width="14" height="14" viewBox="0 0 24 24" fill="none">
-                              <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" stroke="currentColor" strokeWidth="2" strokeLinecap="round"/>
-                              <polyline points="7 10 12 15 17 10" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
-                              <line x1="12" y1="15" x2="12" y2="3" stroke="currentColor" strokeWidth="2" strokeLinecap="round"/>
-                            </svg>
-                          </button>
+                      <div className={styles.msgContent}>
+                        <div className={`${styles.bubble} ${msg.senderType === "mentor" ? styles.bubbleMe : styles.bubbleOther}`}>
+                          {msg.message}
                         </div>
-                        <span className={styles.msgTime}>{msg.time}</span>
-                      </>
-                    ) : (
-                      <>
-                        <div className={`${styles.bubble} ${msg.sender === "me" ? styles.bubbleMe : styles.bubbleOther}`}>
-                          <HighlightText text={msg.text} highlights={msg.highlights} />
-                        </div>
-                        <span className={`${styles.msgTime} ${msg.sender === "me" ? styles.msgTimeMe : ""}`}>
-                          {msg.sender === "me" && (
+                        <span className={`${styles.msgTime} ${msg.senderType === "mentor" ? styles.msgTimeMe : ""}`}>
+                          {msg.senderType === "mentor" && (
                             <svg width="10" height="10" viewBox="0 0 24 24" fill="none" style={{ marginRight: 3 }}>
                               <polyline points="4 12 9 17 20 6" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"/>
                             </svg>
                           )}
-                          {msg.time}
+                          {new Date(msg.timestamp).toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' })}
                         </span>
-                      </>
-                    )}
-                  </div>
+                      </div>
 
-                  {msg.sender === "me" && (
-                    <Image
-                      src="https://i.pravatar.cc/150?img=33"
-                      alt="me"
-                      width={28}
-                      height={28}
-                      unoptimized
-                      className={styles.msgAvatar}
-                    />
-                  )}
-                </div>
-              ))}
+                      {msg.senderType === "mentor" && (
+                        <Image src="https://i.pravatar.cc/150?img=33" alt="me" width={28} height={28} unoptimized className={styles.msgAvatar} />
+                      )}
+                    </div>
+                  ))}
+                </>
+              )}
             </div>
 
             {/* Input */}
+            {active && (
             <div className={styles.inputBar}>
               <button className={styles.inputIconBtn}>
                 <svg width="20" height="20" viewBox="0 0 24 24" fill="none">
@@ -315,18 +244,19 @@ function MessagingContent() {
               </button>
               <input
                 className={styles.msgInput}
-                placeholder="Type an operational directive"
+                placeholder="Type a message"
                 value={input}
                 onChange={(e) => setInput(e.target.value)}
-                onKeyDown={(e) => { if (e.key === "Enter") setInput(""); }}
+                onKeyDown={(e) => { if (e.key === "Enter") handleSendMessage(); }}
               />
-              <button className={styles.sendBtn}>
+              <button className={styles.sendBtn} onClick={handleSendMessage} disabled={!input.trim()}>
                 <svg width="14" height="14" viewBox="0 0 24 24" fill="none">
                   <line x1="22" y1="2" x2="11" y2="13" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round"/>
                   <polygon points="22 2 15 22 11 13 2 9 22 2" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round"/>
                 </svg>
               </button>
             </div>
+            )}
 
           </main>
         </div>

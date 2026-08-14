@@ -7,114 +7,104 @@ import { useRouter } from "next/navigation";
 import Sidebar from "@/components/Sidebar";
 import TopBar from "@/components/TopBar";
 import styles from "./page.module.css";
-
-const TRAINER_DATA = {
-  "Julian Vance": {
-    name: "Julian Vance",
-    role: "Elite Tier Trainer",
-    gym: "Nexus Central Hub",
-    img: "https://i.pravatar.cc/150?img=11",
-    online: true,
-    messages: [
-      { id: 1, sender: "other", text: "Good morning. I've completed the weekly client performance review. All targets are within expected range.", time: "09:10" },
-      { id: 2, sender: "me",    text: "Excellent. Any clients flagged for additional support?", time: "09:13" },
-      { id: 3, sender: "other", text: "Two clients showed a drop in session attendance. I've scheduled a check-in call with both.", time: "09:15" },
-      { id: 4, sender: "me",    text: "Good initiative. Keep me updated after the calls.", time: "09:18" },
-      { id: 5, sender: "other", text: "Will do. I'll send you a summary by end of day.", time: "09:20" },
-    ],
-  },
-  "Alistair Sterling": {
-    name: "Alistair Sterling",
-    role: "Elite Tier Trainer",
-    gym: "Nexus South Hub",
-    img: "https://i.pravatar.cc/150?img=12",
-    online: true,
-    messages: [
-      { id: 1, sender: "other", text: "The new intake group has settled in well. Three standout performers already.", time: "10:05" },
-      { id: 2, sender: "me",    text: "That's promising. What's their compliance rate looking like?", time: "10:08" },
-      { id: 3, sender: "other", text: "Currently at 91%. Well above the minimum threshold.", time: "10:11" },
-      { id: 4, sender: "me",    text: "Keep pushing them. We want that above 95% by month end.", time: "10:14" },
-      { id: 5, sender: "other", text: "Understood. I'll increase session intensity for the stronger candidates.", time: "10:17" },
-    ],
-  },
-  "Evelyn Cross": {
-    name: "Evelyn Cross",
-    role: "Pro Tier Trainer",
-    gym: "Vanguard East",
-    img: "https://i.pravatar.cc/150?img=5",
-    online: false,
-    messages: [
-      { id: 1, sender: "other", text: "The nutrition module feedback has been overwhelmingly positive this cycle.", time: "11:30" },
-      { id: 2, sender: "me",    text: "Great to hear. Are clients sticking to the revised meal plans?", time: "11:33" },
-      { id: 3, sender: "other", text: "Mostly yes. A couple need more guidance on portion control.", time: "11:36" },
-      { id: 4, sender: "me",    text: "Schedule one-on-ones for those clients this week.", time: "11:40" },
-      { id: 5, sender: "other", text: "Already booked them in for Thursday.", time: "11:42" },
-    ],
-  },
-  "Marcus Thorne": {
-    name: "Marcus Thorne",
-    role: "Elite Tier Trainer",
-    gym: "Obsidian West",
-    img: "https://i.pravatar.cc/150?img=15",
-    online: true,
-    messages: [
-      { id: 1, sender: "other", text: "All equipment on my floor has passed the monthly safety inspection.", time: "08:45" },
-      { id: 2, sender: "me",    text: "Good. Any maintenance requests pending?", time: "08:48" },
-      { id: 3, sender: "other", text: "Just one — treadmill unit 4 needs a belt replacement. Already raised the ticket.", time: "08:51" },
-      { id: 4, sender: "me",    text: "Follow it up with facilities if it's not resolved by Friday.", time: "08:54" },
-      { id: 5, sender: "other", text: "Will do. Everything else is running smoothly.", time: "08:56" },
-    ],
-  },
-  "Danny Olive": {
-    name: "Danny Olive",
-    role: "Elite Tier Trainer",
-    gym: "Nexus Central Hub",
-    img: "https://i.pravatar.cc/150?img=17",
-    online: false,
-    messages: [
-      { id: 1, sender: "other", text: "Client retention for my group dropped slightly this month — mainly scheduling conflicts.", time: "13:00" },
-      { id: 2, sender: "me",    text: "How many clients are affected?", time: "13:03" },
-      { id: 3, sender: "other", text: "Four clients requested time slot changes. I've accommodated three so far.", time: "13:06" },
-      { id: 4, sender: "me",    text: "Get the fourth sorted by tomorrow and send me the updated schedule.", time: "13:10" },
-      { id: 5, sender: "other", text: "On it. I'll have it to you by morning.", time: "13:12" },
-    ],
-  },
-};
-
-const DEFAULT_TRAINER = TRAINER_DATA["Julian Vance"];
+import { apiFetch } from "@/lib/api";
 
 function DirectChatContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
-  const [trainer, setTrainer] = useState(DEFAULT_TRAINER);
-  const [messages, setMessages] = useState(DEFAULT_TRAINER.messages);
+  const [trainer, setTrainer] = useState(null);
+  const [conversation, setConversation] = useState(null);
+  const [messages, setMessages] = useState([]);
   const [input, setInput] = useState("");
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState("");
   const bottomRef = useRef(null);
 
   useEffect(() => {
-    const name = searchParams.get("trainer");
-    if (name) {
-      const decoded = decodeURIComponent(name);
-      const found = TRAINER_DATA[decoded];
-      if (found) {
-        setTrainer(found);
-        setMessages(found.messages);
-      }
+    const trainerName = searchParams.get("trainer");
+    if (trainerName) {
+      fetchConversationByTrainer(decodeURIComponent(trainerName));
     }
   }, [searchParams]);
+
+  async function fetchConversationByTrainer(trainerName) {
+    try {
+      setLoading(true);
+      const data = await apiFetch("/api/mentor/messages/conversations");
+      const conversations = data.data?.conversations || [];
+
+      const found = conversations.find(c => c.ptName.toLowerCase() === trainerName.toLowerCase());
+      if (found) {
+        setConversation(found);
+        setTrainer({
+          name: found.ptName,
+          img: found.ptAvatar,
+          online: found.status === "online",
+          role: "Personal Trainer",
+        });
+
+        const msgData = await apiFetch(`/api/mentor/messages/conversations/${found.id}`);
+        setMessages(msgData.data?.messages || []);
+        setError("");
+      } else {
+        setError("Trainer conversation not found");
+      }
+    } catch (err) {
+      setError(err.message || "Failed to load conversation");
+    } finally {
+      setLoading(false);
+    }
+  }
 
   useEffect(() => {
     bottomRef.current?.scrollIntoView({ behavior: "smooth" });
   }, [messages]);
 
-  function sendMessage() {
+  async function sendMessage() {
     const text = input.trim();
-    if (!text) return;
-    const now = new Date();
-    const time = `${String(now.getHours()).padStart(2, "0")}:${String(now.getMinutes()).padStart(2, "0")}`;
-    setMessages((prev) => [...prev, { id: Date.now(), sender: "me", text, time }]);
-    setInput("");
+    if (!text || !conversation) return;
+
+    try {
+      await apiFetch("/api/mentor/messages/send", {
+        method: "POST",
+        body: JSON.stringify({ conversationId: conversation.id, ptId: conversation.ptId, message: text }),
+      });
+
+      setInput("");
+      const msgData = await apiFetch(`/api/mentor/messages/conversations/${conversation.id}`);
+      setMessages(msgData.data?.messages || []);
+    } catch (err) {
+      console.error("Failed to send message:", err);
+    }
   }
+
+  if (loading) return (
+    <div className={styles.layout}>
+      <Sidebar />
+      <div className={styles.rightSection}>
+        <TopBar />
+        <div style={{ display: "flex", alignItems: "center", justifyContent: "center", height: "calc(100vh - 120px)", color: "#666" }}>Loading conversation...</div>
+      </div>
+    </div>
+  );
+
+  if (error || !trainer) return (
+    <div className={styles.layout}>
+      <Sidebar />
+      <div className={styles.rightSection}>
+        <TopBar />
+        <div style={{ display: "flex", alignItems: "center", justifyContent: "center", height: "calc(100vh - 120px)", color: "#ff6b6b" }}>
+          <button className={styles.backBtn} onClick={() => router.push("/pt-dashboard")}>
+            <svg width="12" height="12" viewBox="0 0 24 24" fill="none">
+              <polyline points="15 18 9 12 15 6" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"/>
+            </svg>
+            BACK
+          </button>
+          {error}
+        </div>
+      </div>
+    </div>
+  );
 
   return (
     <div className={styles.layout}>
@@ -143,11 +133,10 @@ function DirectChatContent() {
                   unoptimized
                   className={styles.headerAvatar}
                 />
-                <span className={`${styles.onlineDot} ${trainer.online ? styles.dotGreen : styles.dotGray}`} />
               </div>
               <div>
                 <p className={styles.headerName}>{trainer.name}</p>
-                <p className={styles.headerSub}>{trainer.role} · {trainer.gym}</p>
+                <p className={styles.headerSub}>{trainer.role}</p>
               </div>
             </div>
             <div className={styles.headerRight}>
@@ -161,13 +150,13 @@ function DirectChatContent() {
           <div className={styles.messages}>
             <div className={styles.dateSep}>
               <span className={styles.dateLine} />
-              <span className={styles.dateLabel}>TODAY</span>
+              <span className={styles.dateLabel}>{new Date().toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' }).toUpperCase()}</span>
               <span className={styles.dateLine} />
             </div>
 
             {messages.map((msg) => (
-              <div key={msg.id} className={`${styles.msgRow} ${msg.sender === "me" ? styles.msgRowMe : ""}`}>
-                {msg.sender !== "me" && (
+              <div key={msg.id} className={`${styles.msgRow} ${msg.senderType === "mentor" ? styles.msgRowMe : ""}`}>
+                {msg.senderType !== "mentor" && (
                   <Image
                     src={trainer.img}
                     alt={trainer.name}
@@ -179,20 +168,20 @@ function DirectChatContent() {
                 )}
 
                 <div className={styles.msgContent}>
-                  <div className={`${styles.bubble} ${msg.sender === "me" ? styles.bubbleMe : styles.bubbleOther}`}>
-                    {msg.text}
+                  <div className={`${styles.bubble} ${msg.senderType === "mentor" ? styles.bubbleMe : styles.bubbleOther}`}>
+                    {msg.message}
                   </div>
-                  <span className={`${styles.msgTime} ${msg.sender === "me" ? styles.msgTimeMe : ""}`}>
-                    {msg.sender === "me" && (
+                  <span className={`${styles.msgTime} ${msg.senderType === "mentor" ? styles.msgTimeMe : ""}`}>
+                    {msg.senderType === "mentor" && (
                       <svg width="10" height="10" viewBox="0 0 24 24" fill="none" style={{ marginRight: 3 }}>
                         <polyline points="4 12 9 17 20 6" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"/>
                       </svg>
                     )}
-                    {msg.time}
+                    {new Date(msg.timestamp).toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' })}
                   </span>
                 </div>
 
-                {msg.sender === "me" && (
+                {msg.senderType === "mentor" && (
                   <Image
                     src="https://i.pravatar.cc/150?img=33"
                     alt="me"
@@ -231,7 +220,7 @@ function DirectChatContent() {
               onChange={(e) => setInput(e.target.value)}
               onKeyDown={(e) => { if (e.key === "Enter") sendMessage(); }}
             />
-            <button className={styles.sendBtn} onClick={sendMessage}>
+            <button className={styles.sendBtn} onClick={sendMessage} disabled={!input.trim()}>
               <svg width="14" height="14" viewBox="0 0 24 24" fill="none">
                 <line x1="22" y1="2" x2="11" y2="13" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round"/>
                 <polygon points="22 2 15 22 11 13 2 9 22 2" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round"/>
