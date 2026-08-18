@@ -1,71 +1,17 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import styles from "./RightAlerts.module.css";
+import { apiFetch } from "@/lib/api";
 
-const ALERTS = [
-  {
-    type: "critical",
-    title: "Trainer Not Responding",
-    desc: "Trainer Ravi Sharma has not shown up for 2 sessions today",
-    time: "8m ago",
-  },
-  {
-    type: "critical",
-    title: "Customer Complaint",
-    desc: "Member Priya Mehta complained about rude behaviour by Trainer Jay",
-    time: "22m ago",
-  },
-  {
-    type: "warning",
-    title: "Trainer Late",
-    desc: "Trainer Marcus was 40 mins late for morning batch",
-    time: "1h ago",
-  },
-  {
-    type: "warning",
-    title: "Equipment Complaint",
-    desc: "Customer Arjun reported treadmill #3 is broken since yesterday",
-    time: "1h ago",
-  },
-  {
-    type: "critical",
-    title: "No Show — Trainer",
-    desc: "Trainer Elena Vance absent without notice for evening slot",
-    time: "2h ago",
-  },
-  {
-    type: "warning",
-    title: "Diet Plan Delay",
-    desc: "Trainer Sam has not updated diet plans for 5 customers this week",
-    time: "3h ago",
-  },
-  {
-    type: "info",
-    title: "Refund Requested",
-    desc: "Customer Neha Gupta requesting refund citing poor trainer support",
-    time: "4h ago",
-  },
-  {
-    type: "warning",
-    title: "Hygiene Complaint",
-    desc: "Multiple members reported changing room cleanliness issue",
-    time: "5h ago",
-  },
-  {
-    type: "info",
-    title: "Session Skipped",
-    desc: "Trainer Dev skipped Sunday batch without informing customers",
-    time: "6h ago",
-  },
-  {
-    type: "critical",
-    title: "Injury Report",
-    desc: "Customer Rohit filed injury complaint during Trainer Jay's session",
-    time: "8h ago",
-  },
-];
+const ALERT_TYPE_MAP = {
+  no_confirmation: "warning",
+  client_cancellation: "warning",
+  no_show: "critical",
+  reschedule_request: "info",
+  schedule_conflict: "critical",
+};
 
 const TYPE_CONFIG = {
   critical: { color: "#ff6b6b", bg: "#3d0b0b", label: "CRITICAL",
@@ -107,6 +53,37 @@ const TYPE_CONFIG = {
 
 export default function RightAlerts() {
   const [open, setOpen] = useState(true);
+  const [alerts, setAlerts] = useState([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    fetchAlerts();
+  }, []);
+
+  async function fetchAlerts() {
+    try {
+      setLoading(true);
+      const data = await apiFetch("/api/mentor/schedules/alerts?limit=10");
+      const apiAlerts = data.data?.alerts || [];
+
+      const transformed = apiAlerts.map(a => ({
+        id: a.id,
+        type: ALERT_TYPE_MAP[a.type] || "info",
+        title: a.type.replace(/_/g, " ").toUpperCase(),
+        desc: a.message,
+        time: new Date(a.createdAt).toLocaleDateString("en-US", { hour: "2-digit", minute: "2-digit" }),
+      }));
+
+      setAlerts(transformed);
+    } catch (err) {
+      console.log("Alerts not available");
+      setAlerts([]);
+    } finally {
+      setLoading(false);
+    }
+  }
+
+  const criticalWarningCount = alerts.filter(a => a.type === "critical" || a.type === "warning").length;
 
   if (!open) {
     return (
@@ -116,7 +93,7 @@ export default function RightAlerts() {
             <path d="M18 8a6 6 0 0 0-12 0c0 7-3 9-3 9h18s-3-2-3-9" stroke="#f8e396" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
             <path d="M13.73 21a2 2 0 0 1-3.46 0" stroke="#f8e396" strokeWidth="2"/>
           </svg>
-          <span className={styles.collapsedBadge}>{ALERTS.filter(a => a.type === "critical" || a.type === "warning").length}</span>
+          <span className={styles.collapsedBadge}>{criticalWarningCount}</span>
         </div>
       </aside>
     );
@@ -131,7 +108,7 @@ export default function RightAlerts() {
             <path d="M13.73 21a2 2 0 0 1-3.46 0" stroke="#f8e396" strokeWidth="2"/>
           </svg>
           <span className={styles.headerTitle}>ALERTS</span>
-          <span className={styles.badge}>{ALERTS.filter(a => a.type === "critical" || a.type === "warning").length}</span>
+          <span className={styles.badge}>{criticalWarningCount}</span>
         </div>
         <div className={styles.headerRight}>
           <button className={styles.clearBtn}>Clear All</button>
@@ -145,25 +122,31 @@ export default function RightAlerts() {
       </div>
 
       <div className={styles.list}>
-        {ALERTS.map((a, i) => {
-          const cfg = TYPE_CONFIG[a.type];
-          return (
-            <div key={i} className={styles.alertItem}>
-              <div className={styles.strip} style={{ background: cfg.color }} />
-              <div className={styles.alertBody}>
-                <div className={styles.alertTop}>
-                  <span className={styles.alertBadge} style={{ background: cfg.bg, color: cfg.color }}>
-                    <span style={{ color: cfg.color }}>{cfg.icon}</span>
-                    {cfg.label}
-                  </span>
-                  <span className={styles.alertTime}>{a.time}</span>
+        {loading ? (
+          <div style={{ padding: "20px", textAlign: "center", color: "#666", fontSize: "12px" }}>Loading alerts...</div>
+        ) : alerts.length === 0 ? (
+          <div style={{ padding: "20px", textAlign: "center", color: "#666", fontSize: "12px" }}>No alerts</div>
+        ) : (
+          alerts.map((a) => {
+            const cfg = TYPE_CONFIG[a.type];
+            return (
+              <div key={a.id} className={styles.alertItem}>
+                <div className={styles.strip} style={{ background: cfg.color }} />
+                <div className={styles.alertBody}>
+                  <div className={styles.alertTop}>
+                    <span className={styles.alertBadge} style={{ background: cfg.bg, color: cfg.color }}>
+                      <span style={{ color: cfg.color }}>{cfg.icon}</span>
+                      {cfg.label}
+                    </span>
+                    <span className={styles.alertTime}>{a.time}</span>
+                  </div>
+                  <p className={styles.alertTitle}>{a.title}</p>
+                  <p className={styles.alertDesc}>{a.desc}</p>
                 </div>
-                <p className={styles.alertTitle}>{a.title}</p>
-                <p className={styles.alertDesc}>{a.desc}</p>
               </div>
-            </div>
-          );
-        })}
+            );
+          })
+        )}
       </div>
     </aside>
   );
