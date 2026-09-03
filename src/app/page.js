@@ -32,8 +32,8 @@ function CountUp({ target, decimals = 0, suffix = "", duration = 1800 }) {
 
 export default function LoginPage() {
   const router = useRouter();
-  const [email,    setEmail]    = useState("mentor@fitness.com");
-  const [password, setPassword] = useState("Mentor123");
+  const [email,    setEmail]    = useState("");
+  const [password, setPassword] = useState("");
   const [showPass, setShowPass] = useState(false);
   const [loading,  setLoading]  = useState(false);
   const [error,    setError]    = useState("");
