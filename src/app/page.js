@@ -51,6 +51,13 @@ export default function LoginPage() {
         localStorage.setItem("token", data.data.access_token);
         localStorage.setItem("refresh_token", data.data.refresh_token);
       }
+      // Persist mentor profile info in whatever shape the backend sent it, so the sidebar can show the real name.
+      const profile = data.data?.mentor || data.data?.user || data.data?.profile || null;
+      if (profile) {
+        localStorage.setItem("mentorProfile", JSON.stringify(profile));
+      } else {
+        localStorage.removeItem("mentorProfile");
+      }
       router.push("/dashboard");
     } catch (err) {
       setError(err.message || "Invalid credentials");

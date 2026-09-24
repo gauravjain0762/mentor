@@ -104,7 +104,7 @@ export default function PTProfilePage() {
             </div>
             <div className={styles.statBox}>
               <p className={styles.statLabel}>JOIN DATE</p>
-              <span className={styles.statValue}>{new Date(pt.joinDate).toLocaleDateString()}</span>
+              <span className={styles.statValue}>{new Date(pt.joinDate).toLocaleDateString("en-US")}</span>
             </div>
             <div className={styles.statBox}>
               <p className={styles.statLabel}>STATUS</p>

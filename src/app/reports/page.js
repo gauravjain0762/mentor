@@ -202,13 +202,13 @@ export default function ReportsPage() {
                   onChange={(e) => { setSearch(e.target.value); setCurrentPage(1); }}
                 />
               </div>
-              <select className={styles.filterIconBtn} style={{ padding: "6px 10px", background: "none", border: "1px solid #333", borderRadius: "6px", color: "#aaa" }} value={statusFilter} onChange={(e) => { setStatusFilter(e.target.value); setCurrentPage(1); }}>
+              <select className={styles.filterSelect} value={statusFilter} onChange={(e) => { setStatusFilter(e.target.value); setCurrentPage(1); }}>
                 <option value="all">All Status</option>
                 <option value="open">Open</option>
                 <option value="in_review">In Review</option>
                 <option value="resolved">Resolved</option>
               </select>
-              <select className={styles.filterIconBtn} style={{ padding: "6px 10px", background: "none", border: "1px solid #333", borderRadius: "6px", color: "#aaa" }} value={priorityFilter} onChange={(e) => { setPriorityFilter(e.target.value); setCurrentPage(1); }}>
+              <select className={styles.filterSelect} value={priorityFilter} onChange={(e) => { setPriorityFilter(e.target.value); setCurrentPage(1); }}>
                 <option value="all">All Priority</option>
                 <option value="critical">Critical</option>
                 <option value="high">High</option>
@@ -267,7 +267,7 @@ export default function ReportsPage() {
                         </select>
                       </td>
                       <td className={styles.td}>
-                        <span className={styles.dateText}>{new Date(row.date).toLocaleDateString()}</span>
+                        <span className={styles.dateText}>{new Date(row.date).toLocaleDateString("en-US")}</span>
                       </td>
                       <td className={styles.td}>
                         <div className={styles.actions}>
@@ -320,7 +320,7 @@ export default function ReportsPage() {
                           {a.text}
                           {a.relatedReportId && <span className={styles.activityLink}>{a.relatedReportId}</span>}
                         </p>
-                        <p className={styles.activityTime}>{new Date(a.timestamp).toLocaleDateString()}</p>
+                        <p className={styles.activityTime}>{new Date(a.timestamp).toLocaleDateString("en-US")}</p>
                       </div>
                     </div>
                   ))

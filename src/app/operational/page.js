@@ -1,67 +1,137 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect, Fragment } from "react";
 import { useRouter } from "next/navigation";
 import Image from "next/image";
 import Sidebar from "@/components/Sidebar";
 import TopBar from "@/components/TopBar";
 import styles from "./page.module.css";
+import { apiFetch } from "@/lib/api";
 
-const LOGS = [
-  {
-    pt: { name: "Candidate Delta-4", img: "https://i.pravatar.cc/150?img=11" },
-    date: "Oct 24, 2023",
-    type: "TRANSCRIPT\nREVIEW",   typeClass: "transcript",
-    duration: "82h 45m",
-    notes: "Analyzed psychological res...",
-  },
-  {
-    pt: { name: "Operative Kael",    img: "https://i.pravatar.cc/150?img=15" },
-    date: "Oct 24, 2023",
-    type: "ESCALATION\nSUPPORT",  typeClass: "escalation",
-    duration: "00h 50m",
-    notes: "Critical bypass of encryptio...",
-  },
-  {
-    pt: { name: "Asset 09",          img: "https://i.pravatar.cc/150?img=5"  },
-    date: "Oct 23, 2023",
-    type: "RETENTION\nAUDIT",     typeClass: "retention",
-    duration: "04h 15m",
-    notes: "Full data sweep of personn...",
-  },
-  {
-    pt: { name: "Recruit J",         img: "https://i.pravatar.cc/150?img=17" },
-    date: "Oct 23, 2023",
-    type: "CHECK-IN",             typeClass: "checkin",
-    duration: "00h 15m",
-    notes: "Standard bi-weekly sanity...",
-  },
-  {
-    pt: { name: "Candidate Delta-4", img: "https://i.pravatar.cc/150?img=11" },
-    date: "Oct 22, 2023",
-    type: "TRANSCRIPT\nREVIEW",   typeClass: "transcript",
-    duration: "01h 30m",
-    notes: "Review of audio logs from...",
-  },
-];
+const ACTIVITY_META = {
+  TRANSCRIPT_REVIEW: { lines: ["TRANSCRIPT", "REVIEW"], cls: styles.badge_transcript },
+  ESCALATION_SUPPORT: { lines: ["ESCALATION", "SUPPORT"], cls: styles.badge_escalation },
+  RETENTION_AUDIT: { lines: ["RETENTION", "AUDIT"], cls: styles.badge_retention },
+  CHECK_IN: { lines: ["CHECK-IN"], cls: styles.badge_checkin },
+};
+
+function formatDuration(mins) {
+  const total = Number(mins) || 0;
+  const h = Math.floor(total / 60);
+  const m = total % 60;
+  return `${String(h).padStart(2, "0")}h ${String(m).padStart(2, "0")}m`;
+}
 
 export default function OperationalPage() {
   const router = useRouter();
-  const [search,       setSearch]       = useState("");
-  const [dateRange,    setDateRange]    = useState("This Week");
-  const [personnel,    setPersonnel]    = useState("All Personnel");
-  const [activityType, setActivityType] = useState("All Types");
 
-  function clearFilters() {
-    setSearch(""); setDateRange("This Week");
-    setPersonnel("All Personnel"); setActivityType("All Types");
+  const [logs, setLogs] = useState([]);
+  const [pagination, setPagination] = useState({ page: 1, limit: 20, total: 0, totalPages: 1 });
+  const [stats, setStats] = useState(null);
+  const [pts, setPts] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState("");
+
+  const [search, setSearch] = useState("");
+  const [dateRange, setDateRange] = useState("this_week");
+  const [ptFilter, setPtFilter] = useState("");
+  const [activityType, setActivityType] = useState("");
+  const [currentPage, setCurrentPage] = useState(1);
+
+  const [expandedId, setExpandedId] = useState(null);
+  const [expandedDetail, setExpandedDetail] = useState(null);
+  const [detailLoading, setDetailLoading] = useState(false);
+  const [deletingId, setDeletingId] = useState(null);
+
+  useEffect(() => {
+    apiFetch("/api/mentor/assigned-pts?limit=100")
+      .then((res) => setPts(res.data?.pts || []))
+      .catch(() => setPts([]));
+  }, []);
+
+  useEffect(() => {
+    fetchLogs();
+  }, [dateRange, ptFilter, activityType, currentPage]);
+
+  async function fetchLogs() {
+    try {
+      setLoading(true);
+      const params = new URLSearchParams();
+      params.append("page", currentPage);
+      params.append("limit", pagination.limit || 20);
+      if (dateRange) params.append("dateRange", dateRange);
+      if (ptFilter) params.append("ptId", ptFilter);
+      if (activityType) params.append("activityType", activityType);
+      if (search) params.append("search", search);
+
+      const [logsData, statsData] = await Promise.all([
+        apiFetch(`/api/mentor/operational-logs?${params.toString()}`),
+        apiFetch("/api/mentor/operational-logs/stats"),
+      ]);
+
+      setLogs(logsData.data?.logs || []);
+      setPagination(logsData.data?.pagination || { page: 1, limit: 20, total: 0, totalPages: 1 });
+      setStats(statsData.data || null);
+      setError("");
+    } catch (err) {
+      setError(err.message || "Failed to load operational logs");
+    } finally {
+      setLoading(false);
+    }
   }
 
-  const filtered = LOGS.filter((r) => {
-    const matchSearch = !search || r.pt.name.toLowerCase().includes(search.toLowerCase());
-    const matchType   = activityType === "All Types" || r.type.replace("\n", " ").toLowerCase().includes(activityType.toLowerCase());
-    return matchSearch && matchType;
-  });
+  function clearFilters() {
+    setSearch("");
+    setDateRange("this_week");
+    setPtFilter("");
+    setActivityType("");
+    setCurrentPage(1);
+  }
+
+  function handleSearchSubmit(e) {
+    e.preventDefault();
+    setCurrentPage(1);
+    fetchLogs();
+  }
+
+  async function toggleViewMore(logId) {
+    if (expandedId === logId) {
+      setExpandedId(null);
+      setExpandedDetail(null);
+      return;
+    }
+    setExpandedId(logId);
+    setExpandedDetail(null);
+    setDetailLoading(true);
+    try {
+      const res = await apiFetch(`/api/mentor/operational-logs/${logId}`);
+      setExpandedDetail(res.data?.log || res.data || null);
+    } catch (err) {
+      setExpandedDetail({ notes: err.message || "Failed to load log details" });
+    } finally {
+      setDetailLoading(false);
+    }
+  }
+
+  async function handleDelete(logId) {
+    if (!window.confirm("Delete this log entry? This cannot be undone.")) return;
+    setDeletingId(logId);
+    try {
+      await apiFetch(`/api/mentor/operational-logs/${logId}`, { method: "DELETE" });
+      if (expandedId === logId) {
+        setExpandedId(null);
+        setExpandedDetail(null);
+      }
+      fetchLogs();
+    } catch (err) {
+      setError(err.message || "Failed to delete log");
+    } finally {
+      setDeletingId(null);
+    }
+  }
+
+  const pageStart = logs.length === 0 ? 0 : (pagination.page - 1) * pagination.limit + 1;
+  const pageEnd = (pagination.page - 1) * pagination.limit + logs.length;
 
   return (
     <div className={styles.layout}>
@@ -99,36 +169,32 @@ export default function OperationalPage() {
 
           {/* Filters card */}
           <div className={styles.filtersCard}>
-            {/* Top row: dropdowns + clear button */}
             <div className={styles.filtersRow}>
               <div className={styles.filterGroup}>
                 <label className={styles.filterLabel}>DATE RANGE</label>
-                <select className={styles.filterSelect} value={dateRange} onChange={(e) => setDateRange(e.target.value)}>
-                  <option>This Week</option>
-                  <option>Last Week</option>
-                  <option>This Month</option>
+                <select className={styles.filterSelect} value={dateRange} onChange={(e) => { setDateRange(e.target.value); setCurrentPage(1); }}>
+                  <option value="this_week">This Week</option>
+                  <option value="last_week">Last Week</option>
+                  <option value="this_month">This Month</option>
                 </select>
               </div>
 
               <div className={styles.filterGroup}>
                 <label className={styles.filterLabel}>PT PERSONNEL</label>
-                <select className={styles.filterSelect} value={personnel} onChange={(e) => setPersonnel(e.target.value)}>
-                  <option>All Personnel</option>
-                  <option>Candidate Delta-4</option>
-                  <option>Operative Kael</option>
-                  <option>Asset 09</option>
-                  <option>Recruit J</option>
+                <select className={styles.filterSelect} value={ptFilter} onChange={(e) => { setPtFilter(e.target.value); setCurrentPage(1); }}>
+                  <option value="">All Personnel</option>
+                  {pts.map((p) => <option key={p.id} value={p.id}>{p.name}</option>)}
                 </select>
               </div>
 
               <div className={styles.filterGroup}>
                 <label className={styles.filterLabel}>ACTIVITY TYPE</label>
-                <select className={styles.filterSelect} value={activityType} onChange={(e) => setActivityType(e.target.value)}>
-                  <option>All Types</option>
-                  <option>Transcript Review</option>
-                  <option>Escalation Support</option>
-                  <option>Retention Audit</option>
-                  <option>Check-In</option>
+                <select className={styles.filterSelect} value={activityType} onChange={(e) => { setActivityType(e.target.value); setCurrentPage(1); }}>
+                  <option value="">All Types</option>
+                  <option value="TRANSCRIPT_REVIEW">Transcript Review</option>
+                  <option value="ESCALATION_SUPPORT">Escalation Support</option>
+                  <option value="RETENTION_AUDIT">Retention Audit</option>
+                  <option value="CHECK_IN">Check-In</option>
                 </select>
               </div>
 
@@ -137,7 +203,6 @@ export default function OperationalPage() {
                 <button className={styles.clearBtn} onClick={clearFilters}>CLEAR FILTERS</button>
               </div>
             </div>
-
           </div>
 
           {/* Stats */}
@@ -151,7 +216,7 @@ export default function OperationalPage() {
               </div>
               <div>
                 <p className={styles.statLabel}>TOTAL DURATION</p>
-                <p className={styles.statValue}>142h 18m</p>
+                <p className={styles.statValue}>{stats ? formatDuration(stats.totalDurationMinutes) : "--"}</p>
               </div>
             </div>
             <div className={styles.statCard}>
@@ -164,24 +229,28 @@ export default function OperationalPage() {
               </div>
               <div>
                 <p className={styles.statLabel}>PENDING AUDITS</p>
-                <p className={styles.statValue}>12 Logs</p>
+                <p className={styles.statValue}>{stats ? `${stats.pendingAudits} Logs` : "--"}</p>
               </div>
             </div>
           </div>
 
           {/* Search */}
-          <div className={styles.searchWrap}>
+          <form className={styles.searchWrap} onSubmit={handleSearchSubmit}>
             <svg width="12" height="12" viewBox="0 0 24 24" fill="none" className={styles.searchIcon}>
               <circle cx="11" cy="11" r="7" stroke="currentColor" strokeWidth="2"/>
               <line x1="16.5" y1="16.5" x2="22" y2="22" stroke="currentColor" strokeWidth="2" strokeLinecap="round"/>
             </svg>
             <input
               className={styles.searchInput}
-              placeholder="Search PT, notes, or activity"
+              placeholder="Search PT, notes, or activity — press Enter"
               value={search}
               onChange={(e) => setSearch(e.target.value)}
             />
-          </div>
+          </form>
+
+          {error && (
+            <p style={{ color: "#ff6b6b", fontSize: "12px", fontWeight: 600, margin: "-8px 0 14px" }}>{error}</p>
+          )}
 
           {/* Table */}
           <div className={styles.tableWrap}>
@@ -194,52 +263,110 @@ export default function OperationalPage() {
                   <th className={styles.th}>DURATION</th>
                   <th className={styles.th}>NOTES</th>
                   <th className={styles.th}></th>
+                  <th className={styles.th}></th>
                 </tr>
               </thead>
               <tbody>
-                {filtered.map((row, i) => (
-                  <tr key={i} className={styles.tr}>
-                    <td className={styles.td}>
-                      <div className={styles.ptCell}>
-                        <Image src={row.pt.img} alt={row.pt.name} width={32} height={32} unoptimized className={styles.ptAvatar} />
-                        <span className={styles.ptName}>{row.pt.name}</span>
-                      </div>
-                    </td>
-                    <td className={styles.td}>
-                      <span className={styles.dateText}>{row.date}</span>
-                    </td>
-                    <td className={styles.td}>
-                      <span className={`${styles.badge} ${styles[`badge_${row.typeClass}`]}`}>
-                        {row.type.split("\n").map((line, li) => (
-                          <span key={li} className={styles.badgeLine}>{line}</span>
-                        ))}
-                      </span>
-                    </td>
-                    <td className={styles.td}>
-                      <span className={styles.duration}>{row.duration}</span>
-                    </td>
-                    <td className={styles.td}>
-                      <span className={styles.notes}>{row.notes}</span>
-                    </td>
-                    <td className={styles.td}>
-                      <button className={styles.viewBtn}>View<br/>More</button>
-                    </td>
-                  </tr>
-                ))}
+                {loading ? (
+                  <tr><td colSpan={7} style={{ textAlign: "center", padding: "24px", color: "#666" }}>Loading logs...</td></tr>
+                ) : logs.length === 0 ? (
+                  <tr><td colSpan={7} style={{ textAlign: "center", padding: "24px", color: "#666" }}>No logs found</td></tr>
+                ) : (
+                  logs.map((row) => {
+                    const meta = ACTIVITY_META[row.activityType] || { lines: [row.activityType], cls: styles.badge_checkin };
+                    return (
+                      <Fragment key={row.id}>
+                        <tr className={styles.tr}>
+                          <td className={styles.td}>
+                            <div className={styles.ptCell}>
+                              <Image src={row.trainer?.avatarUrl || "https://i.pravatar.cc/150?img=11"} alt={row.trainer?.name || "PT"} width={32} height={32} unoptimized className={styles.ptAvatar} />
+                              <span className={styles.ptName}>{row.trainer?.name || "Unknown"}</span>
+                            </div>
+                          </td>
+                          <td className={styles.td}>
+                            <span className={styles.dateText}>{row.date ? new Date(row.date).toLocaleDateString("en-US") : "--"}</span>
+                          </td>
+                          <td className={styles.td}>
+                            <span className={`${styles.badge} ${meta.cls}`}>
+                              {meta.lines.map((line, li) => (
+                                <span key={li} className={styles.badgeLine}>{line}</span>
+                              ))}
+                            </span>
+                          </td>
+                          <td className={styles.td}>
+                            <span className={styles.duration}>{formatDuration(row.durationMinutes)}</span>
+                          </td>
+                          <td className={styles.td}>
+                            <span className={styles.notes}>{row.notes}</span>
+                          </td>
+                          <td className={styles.td}>
+                            <button className={styles.viewBtn} onClick={() => toggleViewMore(row.id)}>
+                              {expandedId === row.id ? "Hide" : <>View<br />More</>}
+                            </button>
+                          </td>
+                          <td className={styles.td}>
+                            <button
+                              className={styles.viewBtn}
+                              style={{ color: "#ff6b6b" }}
+                              disabled={deletingId === row.id}
+                              onClick={() => handleDelete(row.id)}
+                            >
+                              {deletingId === row.id ? "..." : "Delete"}
+                            </button>
+                          </td>
+                        </tr>
+                        {expandedId === row.id && (
+                          <tr className={styles.tr}>
+                            <td className={styles.td} colSpan={7} style={{ background: "#0a0a0a" }}>
+                              {detailLoading ? (
+                                <span style={{ color: "#666", fontSize: "11.5px" }}>Loading details...</span>
+                              ) : (
+                                <span style={{ color: "#aaa", fontSize: "11.5px", lineHeight: 1.6 }}>
+                                  {expandedDetail?.notes || "No additional details."}
+                                </span>
+                              )}
+                            </td>
+                          </tr>
+                        )}
+                      </Fragment>
+                    );
+                  })
+                )}
               </tbody>
             </table>
 
             {/* Pagination */}
             <div className={styles.pagination}>
-              <span className={styles.pageInfo}>Showing 1 to {filtered.length} of 128 logs</span>
+              <span className={styles.pageInfo}>Showing {pageStart} to {pageEnd} of {pagination.total} logs</span>
               <div className={styles.pageBtns}>
-                <button className={styles.pageArrow}>&#8249;</button>
-                <button className={`${styles.pageNum} ${styles.pageActive}`}>1</button>
-                <button className={styles.pageNum}>2</button>
-                <button className={styles.pageNum}>3</button>
-                <span className={styles.pageDots}>...</span>
-                <button className={styles.pageNum}>26</button>
-                <button className={styles.pageArrow}>&#8250;</button>
+                <button
+                  className={styles.pageArrow}
+                  disabled={pagination.page <= 1}
+                  onClick={() => setCurrentPage((p) => Math.max(1, p - 1))}
+                >&#8249;</button>
+                {Array.from({ length: pagination.totalPages || 1 }, (_, i) => i + 1)
+                  .filter((p) => p === 1 || p === pagination.totalPages || Math.abs(p - pagination.page) <= 1)
+                  .reduce((acc, p, idx, arr) => {
+                    if (idx > 0 && p - arr[idx - 1] > 1) acc.push("...");
+                    acc.push(p);
+                    return acc;
+                  }, [])
+                  .map((p, i) =>
+                    p === "..." ? (
+                      <span key={`dots-${i}`} className={styles.pageDots}>...</span>
+                    ) : (
+                      <button
+                        key={p}
+                        className={`${styles.pageNum} ${p === pagination.page ? styles.pageActive : ""}`}
+                        onClick={() => setCurrentPage(p)}
+                      >{p}</button>
+                    )
+                  )}
+                <button
+                  className={styles.pageArrow}
+                  disabled={pagination.page >= pagination.totalPages}
+                  onClick={() => setCurrentPage((p) => Math.min(pagination.totalPages, p + 1))}
+                >&#8250;</button>
               </div>
             </div>
           </div>

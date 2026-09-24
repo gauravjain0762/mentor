@@ -94,9 +94,10 @@ export default function CreateLogPage() {
                   <input
                     className={styles.input}
                     type="date"
+                    lang="en-US"
                     value={date}
                     onChange={(e) => setDate(e.target.value)}
-                    placeholder="dd-mm-yyyy"
+                    placeholder="mm/dd/yyyy"
                   />
                 </div>
               </div>

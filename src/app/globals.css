@@ -4,6 +4,7 @@
   --foreground: #ffffff;
   --surface: #111111;
   --border: #222222;
+  color-scheme: dark;
 }
 
 html,
