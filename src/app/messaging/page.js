@@ -57,14 +57,19 @@ function MessagingContent() {
   const [input, setInput] = useState("");
   const [sending, setSending] = useState(false);
 
-  const { data: convData, isLoading: loading, error: convErr } = useSWR("/api/mentor/messages/conversations");
+  // No real-time push from the backend yet, so poll instead: the conversation list refreshes
+  // every 8s (new messages/unread counts), and whichever conversation is open refreshes every
+  // 3s so incoming trainer messages show up without a manual refresh. Paused mid-send so the
+  // optimistic message below isn't clobbered by a poll landing before the send resolves.
+  const { data: convData, isLoading: loading, error: convErr } = useSWR("/api/mentor/messages/conversations", { refreshInterval: 8000 });
   const conversations = convData?.data?.conversations || [];
   const error = convErr?.message || "";
 
   const active = selectedConv || conversations[0] || null;
 
   const { data: msgData, isLoading: msgLoading, mutate: mutateMessages } = useSWR(
-    active ? `/api/mentor/messages/conversations/${active.id}` : null
+    active ? `/api/mentor/messages/conversations/${active.id}` : null,
+    { refreshInterval: sending ? 0 : 3000 }
   );
   const messages = msgData?.data?.messages || [];
 

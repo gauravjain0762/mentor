@@ -20,7 +20,9 @@ function DirectChatContent() {
   const trainerNameParam = searchParams.get("trainer");
   const trainerName = trainerNameParam ? decodeURIComponent(trainerNameParam) : null;
 
-  const { data: convListData, isLoading: convLoading, error: convErr } = useSWR("/api/mentor/messages/conversations");
+  // No real-time push from the backend yet, so poll: paused mid-send so the optimistic
+  // message below isn't clobbered by a poll landing before the send resolves.
+  const { data: convListData, isLoading: convLoading, error: convErr } = useSWR("/api/mentor/messages/conversations", { refreshInterval: 8000 });
   const conversations = convListData?.data?.conversations || [];
   const found = trainerName ? conversations.find(c => c.ptName.toLowerCase() === trainerName.toLowerCase()) : null;
 
@@ -30,7 +32,8 @@ function DirectChatContent() {
     : null;
 
   const { data: msgData, mutate: mutateMessages } = useSWR(
-    conversation ? `/api/mentor/messages/conversations/${conversation.id}` : null
+    conversation ? `/api/mentor/messages/conversations/${conversation.id}` : null,
+    { refreshInterval: sending ? 0 : 3000 }
   );
   const messages = msgData?.data?.messages || [];
 
