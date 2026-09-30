@@ -55,6 +55,7 @@ function MessagingContent() {
   const searchParams = useSearchParams();
   const [selectedConv, setSelectedConv] = useState(null);
   const [input, setInput] = useState("");
+  const [sending, setSending] = useState(false);
 
   const { data: convData, isLoading: loading, error: convErr } = useSWR("/api/mentor/messages/conversations");
   const conversations = convData?.data?.conversations || [];
@@ -68,16 +69,36 @@ function MessagingContent() {
   const messages = msgData?.data?.messages || [];
 
   async function handleSendMessage() {
-    if (!input.trim() || !active) return;
+    const text = input.trim();
+    if (!text || !active || sending) return;
+
+    setSending(true);
+    setInput("");
+    const optimisticMessage = { id: `temp-${Date.now()}`, senderType: "mentor", message: text, timestamp: new Date().toISOString() };
+
     try {
-      await apiFetch("/api/mentor/messages/send", {
-        method: "POST",
-        body: JSON.stringify({ conversationId: active.id, ptId: active.ptId, message: input }),
-      });
-      setInput("");
-      mutateMessages();
+      await mutateMessages(
+        async () => {
+          await apiFetch("/api/mentor/messages/send", {
+            method: "POST",
+            body: JSON.stringify({ conversationId: active.id, ptId: active.ptId, message: text }),
+          });
+          return apiFetch(`/api/mentor/messages/conversations/${active.id}`);
+        },
+        {
+          optimisticData: (current) => ({
+            ...(current || {}),
+            data: { ...(current?.data || {}), messages: [...(current?.data?.messages || []), optimisticMessage] },
+          }),
+          rollbackOnError: true,
+          revalidate: false,
+        }
+      );
     } catch (err) {
       console.error("Failed to send message:", err);
+      setInput(text);
+    } finally {
+      setSending(false);
     }
   }
 
@@ -220,7 +241,7 @@ function MessagingContent() {
                 onChange={(e) => setInput(e.target.value)}
                 onKeyDown={(e) => { if (e.key === "Enter") handleSendMessage(); }}
               />
-              <button className={styles.sendBtn} onClick={handleSendMessage} disabled={!input.trim()}>
+              <button className={styles.sendBtn} onClick={handleSendMessage} disabled={!input.trim() || sending} style={sending ? { opacity: 0.5, cursor: "not-allowed" } : undefined}>
                 <svg width="14" height="14" viewBox="0 0 24 24" fill="none">
                   <line x1="22" y1="2" x2="11" y2="13" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round"/>
                   <polygon points="22 2 15 22 11 13 2 9 22 2" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round"/>

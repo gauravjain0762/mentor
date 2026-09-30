@@ -14,6 +14,7 @@ function DirectChatContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const [input, setInput] = useState("");
+  const [sending, setSending] = useState(false);
   const bottomRef = useRef(null);
 
   const trainerNameParam = searchParams.get("trainer");
@@ -42,18 +43,35 @@ function DirectChatContent() {
 
   async function sendMessage() {
     const text = input.trim();
-    if (!text || !conversation) return;
+    if (!text || !conversation || sending) return;
+
+    setSending(true);
+    setInput("");
+    const optimisticMessage = { id: `temp-${Date.now()}`, senderType: "mentor", message: text, timestamp: new Date().toISOString() };
 
     try {
-      await apiFetch("/api/mentor/messages/send", {
-        method: "POST",
-        body: JSON.stringify({ conversationId: conversation.id, ptId: conversation.ptId, message: text }),
-      });
-
-      setInput("");
-      mutateMessages();
+      await mutateMessages(
+        async () => {
+          await apiFetch("/api/mentor/messages/send", {
+            method: "POST",
+            body: JSON.stringify({ conversationId: conversation.id, ptId: conversation.ptId, message: text }),
+          });
+          return apiFetch(`/api/mentor/messages/conversations/${conversation.id}`);
+        },
+        {
+          optimisticData: (current) => ({
+            ...(current || {}),
+            data: { ...(current?.data || {}), messages: [...(current?.data?.messages || []), optimisticMessage] },
+          }),
+          rollbackOnError: true,
+          revalidate: false,
+        }
+      );
     } catch (err) {
       console.error("Failed to send message:", err);
+      setInput(text);
+    } finally {
+      setSending(false);
     }
   }
 
@@ -199,7 +217,7 @@ function DirectChatContent() {
               onChange={(e) => setInput(e.target.value)}
               onKeyDown={(e) => { if (e.key === "Enter") sendMessage(); }}
             />
-            <button className={styles.sendBtn} onClick={sendMessage} disabled={!input.trim()}>
+            <button className={styles.sendBtn} onClick={sendMessage} disabled={!input.trim() || sending} style={sending ? { opacity: 0.5, cursor: "not-allowed" } : undefined}>
               <svg width="14" height="14" viewBox="0 0 24 24" fill="none">
                 <line x1="22" y1="2" x2="11" y2="13" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round"/>
                 <polygon points="22 2 15 22 11 13 2 9 22 2" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round"/>
