@@ -79,28 +79,35 @@ function MessagingContent() {
 
     setSending(true);
     setInput("");
-    const optimisticMessage = { id: `temp-${Date.now()}`, senderType: "mentor", message: text, timestamp: new Date().toISOString() };
+    const tempId = `temp-${Date.now()}`;
+    const optimisticMessage = { id: tempId, senderType: "mentor", message: text, timestamp: new Date().toISOString() };
+
+    const appendMessage = (msg) => (current) => {
+      const withoutTemp = (current?.data?.messages || []).filter((m) => m.id !== tempId);
+      return { ...(current || {}), data: { ...(current?.data || {}), messages: [...withoutTemp, msg] } };
+    };
+
+    // Show it immediately.
+    mutateMessages(appendMessage(optimisticMessage), { revalidate: false });
 
     try {
-      await mutateMessages(
-        async () => {
-          await apiFetch("/api/mentor/messages/send", {
-            method: "POST",
-            body: JSON.stringify({ conversationId: active.id, ptId: active.ptId, message: text }),
-          });
-          return apiFetch(`/api/mentor/messages/conversations/${active.id}`);
-        },
-        {
-          optimisticData: (current) => ({
-            ...(current || {}),
-            data: { ...(current?.data || {}), messages: [...(current?.data?.messages || []), optimisticMessage] },
-          }),
-          rollbackOnError: true,
-          revalidate: false,
-        }
-      );
+      const res = await apiFetch("/api/mentor/messages/send", {
+        method: "POST",
+        body: JSON.stringify({ conversationId: active.id, ptId: active.ptId, message: text }),
+      });
+      const confirmed = res?.data;
+      // Swap the temp message for the confirmed one straight from the send response -
+      // no dependency on a follow-up GET being immediately consistent.
+      const finalMessage = confirmed
+        ? { id: confirmed.messageId, senderId: confirmed.senderId, senderType: confirmed.senderType || "mentor", message: confirmed.message, timestamp: confirmed.timestamp, read: confirmed.read }
+        : optimisticMessage;
+      mutateMessages(appendMessage(finalMessage), { revalidate: false });
     } catch (err) {
       console.error("Failed to send message:", err);
+      mutateMessages(
+        (current) => ({ ...(current || {}), data: { ...(current?.data || {}), messages: (current?.data?.messages || []).filter((m) => m.id !== tempId) } }),
+        { revalidate: false }
+      );
       setInput(text);
     } finally {
       setSending(false);
