@@ -15,7 +15,7 @@ function decodeJwtPayload(token) {
 export function getMentorProfile() {
   if (typeof window === "undefined") return null;
 
-  const fallback = { name: "Mentor", role: "Performance Mentor", avatar: "https://i.pravatar.cc/150?img=33" };
+  const fallback = { id: null, name: "Mentor", role: "Performance Mentor", avatar: "https://i.pravatar.cc/150?img=33" };
 
   let stored = null;
   try {
@@ -39,6 +39,7 @@ export function getMentorProfile() {
     fallback.name;
 
   return {
+    id: source.userId || source.id || source._id || source.sub || source.mentorId || null,
     name,
     role: source.role || source.designation || fallback.role,
     avatar: source.avatarUrl || source.avatar || source.photoUrl || fallback.avatar,
