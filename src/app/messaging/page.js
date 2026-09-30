@@ -1,7 +1,7 @@
 "use client";
 
-import { useState, Suspense } from "react";
-import useSWR from "swr";
+import { useState, Suspense, useEffect, useRef } from "react";
+import useSWR, { mutate as mutateSWR } from "swr";
 import { useSearchParams } from "next/navigation";
 import Image from "next/image";
 import Sidebar from "@/components/Sidebar";
@@ -56,22 +56,24 @@ function MessagingContent() {
   const [selectedConv, setSelectedConv] = useState(null);
   const [input, setInput] = useState("");
   const [sending, setSending] = useState(false);
+  const messagesEndRef = useRef(null);
 
-  // No real-time push from the backend yet, so poll instead: the conversation list refreshes
-  // every 8s (new messages/unread counts), and whichever conversation is open refreshes every
-  // 3s so incoming trainer messages show up without a manual refresh. Paused mid-send so the
-  // optimistic message below isn't clobbered by a poll landing before the send resolves.
-  const { data: convData, isLoading: loading, error: convErr } = useSWR("/api/mentor/messages/conversations", { refreshInterval: 8000, dedupingInterval: 4000 });
+  const { data: convData, isLoading: loading, error: convErr, mutate: mutateConversations } = useSWR("/api/mentor/messages/conversations", { refreshInterval: 8000, dedupingInterval: 4000 });
   const conversations = convData?.data?.conversations || [];
   const error = convErr?.message || "";
 
   const active = selectedConv || conversations[0] || null;
+  const messageKey = active ? `/api/mentor/messages/conversations/${active.id}` : null;
 
-  const { data: msgData, isLoading: msgLoading, mutate: mutateMessages } = useSWR(
-    active ? `/api/mentor/messages/conversations/${active.id}` : null,
+  const { data: msgData, isLoading: msgLoading } = useSWR(
+    messageKey,
     { refreshInterval: sending ? 0 : 3000, dedupingInterval: 1500 }
   );
   const messages = msgData?.data?.messages || [];
+
+  useEffect(() => {
+    messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
+  }, [active?.id, messages.length]);
 
   async function handleSendMessage() {
     const text = input.trim();
@@ -82,13 +84,14 @@ function MessagingContent() {
     const tempId = `temp-${Date.now()}`;
     const optimisticMessage = { id: tempId, senderType: "mentor", message: text, timestamp: new Date().toISOString() };
 
-    const appendMessage = (msg) => (current) => {
-      const withoutTemp = (current?.data?.messages || []).filter((m) => m.id !== tempId);
+    const upsertMessage = (msg) => (current) => {
+      const existing = current?.data?.messages || [];
+      const withoutTemp = existing.filter((m) => m.id !== tempId && String(m.id) !== String(msg.id));
       return { ...(current || {}), data: { ...(current?.data || {}), messages: [...withoutTemp, msg] } };
     };
 
     // Show it immediately.
-    mutateMessages(appendMessage(optimisticMessage), { revalidate: false });
+    mutateSWR(messageKey, upsertMessage(optimisticMessage), { revalidate: false });
 
     try {
       const res = await apiFetch("/api/mentor/messages/send", {
@@ -99,12 +102,13 @@ function MessagingContent() {
       // Swap the temp message for the confirmed one straight from the send response -
       // no dependency on a follow-up GET being immediately consistent.
       const finalMessage = confirmed
-        ? { id: confirmed.messageId, senderId: confirmed.senderId, senderType: confirmed.senderType || "mentor", message: confirmed.message, timestamp: confirmed.timestamp, read: confirmed.read }
+        ? { id: confirmed.messageId ?? confirmed.id, senderId: confirmed.senderId, senderType: confirmed.senderType || "mentor", message: confirmed.message || text, timestamp: confirmed.timestamp || optimisticMessage.timestamp, read: confirmed.read }
         : optimisticMessage;
-      mutateMessages(appendMessage(finalMessage), { revalidate: false });
+      mutateSWR(messageKey, upsertMessage(finalMessage), { revalidate: false });
+      mutateConversations();
     } catch (err) {
       console.error("Failed to send message:", err);
-      mutateMessages(
+      mutateSWR(messageKey,
         (current) => ({ ...(current || {}), data: { ...(current?.data || {}), messages: (current?.data?.messages || []).filter((m) => m.id !== tempId) } }),
         { revalidate: false }
       );
@@ -224,6 +228,7 @@ function MessagingContent() {
                       )}
                     </div>
                   ))}
+                  <div ref={messagesEndRef} />
                 </>
               )}
             </div>
@@ -276,4 +281,3 @@ export default function MessagingPage() {
     </Suspense>
   );
 }
- 

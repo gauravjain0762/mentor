@@ -24,7 +24,9 @@ function useTrainerMessageSubscription() {
     const pusher = new Pusher(PUSHER_KEY, { cluster: PUSHER_CLUSTER });
     const channel = pusher.subscribe(`mentor-${mentor.id}`);
 
-    channel.bind("new-message-from-trainer", (payload) => {
+    const onNewMessage = (payload) => {
+      if (!payload?.conversationId || !payload?.messageId) return;
+
       const message = {
         id: payload.messageId,
         senderId: payload.senderId,
@@ -42,7 +44,7 @@ function useTrainerMessageSubscription() {
         (current) => {
           if (!current) return current;
           const existing = current.data?.messages || [];
-          if (existing.some((m) => m.id === message.id)) return current;
+          if (existing.some((m) => String(m.id) === String(message.id))) return current;
           return { ...current, data: { ...current.data, messages: [...existing, message] } };
         },
         { revalidate: false }
@@ -50,9 +52,18 @@ function useTrainerMessageSubscription() {
 
       // Refresh the conversation list so previews/unread counts pick up the new message.
       mutate("/api/mentor/messages/conversations");
-    });
+    };
+
+    channel.bind("new-message-from-trainer", onNewMessage);
 
     pusherRef.current = pusher;
+
+    return () => {
+      channel.unbind("new-message-from-trainer", onNewMessage);
+      pusher.unsubscribe(`mentor-${mentor.id}`);
+      pusher.disconnect();
+      pusherRef.current = null;
+    };
   }, [pathname]);
 }
 
