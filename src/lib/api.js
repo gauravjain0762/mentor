@@ -1,4 +1,6 @@
 export const BASE_URL = "https://fitness-app-seven-beryl.vercel.app";
+export const SESSION_STARTED_AT_KEY = "mentor_session_started_at";
+const SESSION_MAX_AGE_MS = 24 * 60 * 60 * 1000;
 
 function decodeJwtPayload(token) {
   try {
@@ -7,6 +9,29 @@ function decodeJwtPayload(token) {
   } catch {
     return null;
   }
+}
+
+export function clearMentorSession() {
+  if (typeof window === "undefined") return;
+  localStorage.removeItem("token");
+  localStorage.removeItem("refresh_token");
+  localStorage.removeItem("mentorProfile");
+  localStorage.removeItem(SESSION_STARTED_AT_KEY);
+}
+
+export function isMentorSessionExpired() {
+  if (typeof window === "undefined") return false;
+  const token = localStorage.getItem("token");
+  if (!token) return false;
+
+  let startedAt = Number(localStorage.getItem(SESSION_STARTED_AT_KEY));
+  if (!Number.isFinite(startedAt) || startedAt <= 0) {
+    const issuedAt = decodeJwtPayload(token)?.iat;
+    startedAt = Number.isFinite(issuedAt) ? issuedAt * 1000 : Date.now();
+    localStorage.setItem(SESSION_STARTED_AT_KEY, String(startedAt));
+  }
+
+  return Date.now() - startedAt >= SESSION_MAX_AGE_MS;
 }
 
 // Resolves the signed-in mentor's display info from whatever the backend actually gave us:
@@ -47,6 +72,10 @@ export function getMentorProfile() {
 }
 
 export async function apiFetch(path, options = {}) {
+  if (!path.startsWith("/api/auth/mentor/login") && isMentorSessionExpired()) {
+    if (typeof window !== "undefined") window.dispatchEvent(new Event("mentor-session-expired"));
+    throw new Error("Session expired. Please sign in again.");
+  }
   const token = typeof window !== "undefined" ? localStorage.getItem("token") : null;
   const headers = {
     "Content-Type": "application/json",

@@ -6,7 +6,7 @@ import { useRouter } from "next/navigation";
 import Image from "next/image";
 import { Cinzel } from "next/font/google";
 import styles from "./page.module.css";
-import { apiFetch } from "@/lib/api";
+import { apiFetch, SESSION_STARTED_AT_KEY } from "@/lib/api";
 
 const cinzel = Cinzel({ subsets: ["latin"], weight: ["600", "700", "900"] });
 
@@ -51,6 +51,7 @@ export default function LoginPage() {
       if (data.data?.access_token) {
         localStorage.setItem("token", data.data.access_token);
         localStorage.setItem("refresh_token", data.data.refresh_token);
+        localStorage.setItem(SESSION_STARTED_AT_KEY, String(Date.now()));
       }
       // Prime the mentor profile (name/photo/title etc.) into the shared SWR cache right
       // after login, so it's already there - not still loading - when the sidebar mounts.

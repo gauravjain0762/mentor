@@ -1,10 +1,10 @@
 "use client";
 
 import { useEffect, useRef } from "react";
-import { usePathname } from "next/navigation";
+import { usePathname, useRouter } from "next/navigation";
 import { SWRConfig, mutate } from "swr";
 import Pusher from "pusher-js";
-import { apiFetch, getMentorProfile } from "@/lib/api";
+import { apiFetch, clearMentorSession, getMentorProfile, isMentorSessionExpired } from "@/lib/api";
 import { PUSHER_KEY, PUSHER_CLUSTER } from "@/lib/pusher";
 
 // Subscribes once the mentor is signed in (their id only exists in localStorage after
@@ -13,7 +13,39 @@ import { PUSHER_KEY, PUSHER_CLUSTER } from "@/lib/pusher";
 // of the session).
 function useTrainerMessageSubscription() {
   const pathname = usePathname();
+  const router = useRouter();
   const pusherRef = useRef(null);
+
+  useEffect(() => {
+    const expireSession = () => {
+      clearMentorSession();
+      if (window.location.pathname !== "/") router.replace("/");
+    };
+    const checkSession = () => {
+      if (isMentorSessionExpired()) expireSession();
+    };
+    const onStorage = (event) => {
+      if (event.key === "token" && !event.newValue) router.replace("/");
+    };
+
+    checkSession();
+    const intervalId = window.setInterval(checkSession, 60 * 1000);
+    const onVisibilityChange = () => {
+      if (document.visibilityState === "visible") checkSession();
+    };
+    document.addEventListener("visibilitychange", onVisibilityChange);
+    window.addEventListener("pageshow", checkSession);
+    window.addEventListener("mentor-session-expired", expireSession);
+    window.addEventListener("storage", onStorage);
+
+    return () => {
+      window.clearInterval(intervalId);
+      document.removeEventListener("visibilitychange", onVisibilityChange);
+      window.removeEventListener("pageshow", checkSession);
+      window.removeEventListener("mentor-session-expired", expireSession);
+      window.removeEventListener("storage", onStorage);
+    };
+  }, [router]);
 
   useEffect(() => {
     if (pusherRef.current || !PUSHER_KEY || !PUSHER_CLUSTER) return;

@@ -2,6 +2,7 @@
 
 import { useRouter } from "next/navigation";
 import styles from "./TopBar.module.css";
+import { clearMentorSession } from "@/lib/api";
 
 export default function TopBar() {
   const router = useRouter();
@@ -15,7 +16,7 @@ export default function TopBar() {
             stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" />
         </svg>
       </button>
-      <button className={styles.logout} onClick={() => router.push("/")}>
+      <button className={styles.logout} onClick={() => { clearMentorSession(); router.replace("/"); }}>
         <svg width="14" height="14" viewBox="0 0 24 24" fill="none">
           <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"
             stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" />
