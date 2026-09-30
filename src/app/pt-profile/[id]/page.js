@@ -1,37 +1,19 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import useSWR from "swr";
 import { useRouter, useParams } from "next/navigation";
 import Image from "next/image";
 import Sidebar from "@/components/Sidebar";
 import TopBar from "@/components/TopBar";
 import styles from "./page.module.css";
-import { apiFetch } from "@/lib/api";
 
 export default function PTProfilePage() {
   const router = useRouter();
   const params = useParams();
-  const [pt, setPt] = useState(null);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState("");
 
-  useEffect(() => {
-    fetchPTDetails();
-  }, [params.id]);
-
-  async function fetchPTDetails() {
-    try {
-      setLoading(true);
-      const data = await apiFetch(`/api/mentor/assigned-pts/${params.id}`);
-      setPt(data.data?.pt || null);
-      setError("");
-    } catch (err) {
-      setError(err.message || "Failed to load PT details");
-      setPt(null);
-    } finally {
-      setLoading(false);
-    }
-  }
+  const { data, isLoading: loading, error: fetchErr } = useSWR(`/api/mentor/assigned-pts/${params.id}`);
+  const pt = data?.data?.pt || null;
+  const error = fetchErr?.message || "";
 
   if (loading) return (
     <div className={styles.layout}>

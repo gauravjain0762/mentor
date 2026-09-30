@@ -1,6 +1,7 @@
 "use client";
 
-import { useState, useEffect, Suspense } from "react";
+import { useState, Suspense } from "react";
+import useSWR from "swr";
 import { useSearchParams } from "next/navigation";
 import Image from "next/image";
 import Sidebar from "@/components/Sidebar";
@@ -52,48 +53,19 @@ function StackedAvatars({ members, size, offset, borderColor }) {
 
 function MessagingContent() {
   const searchParams = useSearchParams();
-  const [conversations, setConversations] = useState([]);
-  const [active, setActive] = useState(null);
-  const [messages, setMessages] = useState([]);
+  const [selectedConv, setSelectedConv] = useState(null);
   const [input, setInput] = useState("");
-  const [loading, setLoading] = useState(true);
-  const [msgLoading, setMsgLoading] = useState(false);
-  const [error, setError] = useState("");
 
-  useEffect(() => {
-    fetchConversations();
-  }, []);
+  const { data: convData, isLoading: loading, error: convErr } = useSWR("/api/mentor/messages/conversations");
+  const conversations = convData?.data?.conversations || [];
+  const error = convErr?.message || "";
 
-  async function fetchConversations() {
-    try {
-      setLoading(true);
-      const data = await apiFetch("/api/mentor/messages/conversations");
-      const convs = data.data?.conversations || [];
-      setConversations(convs);
-      if (convs.length > 0) {
-        setActive(convs[0]);
-        fetchMessages(convs[0].id);
-      }
-      setError("");
-    } catch (err) {
-      setError(err.message || "Failed to load conversations");
-      setConversations([]);
-    } finally {
-      setLoading(false);
-    }
-  }
+  const active = selectedConv || conversations[0] || null;
 
-  async function fetchMessages(convId) {
-    try {
-      setMsgLoading(true);
-      const data = await apiFetch(`/api/mentor/messages/conversations/${convId}`);
-      setMessages(data.data?.messages || []);
-    } catch (err) {
-      console.error("Failed to load messages:", err);
-    } finally {
-      setMsgLoading(false);
-    }
-  }
+  const { data: msgData, isLoading: msgLoading, mutate: mutateMessages } = useSWR(
+    active ? `/api/mentor/messages/conversations/${active.id}` : null
+  );
+  const messages = msgData?.data?.messages || [];
 
   async function handleSendMessage() {
     if (!input.trim() || !active) return;
@@ -103,15 +75,14 @@ function MessagingContent() {
         body: JSON.stringify({ conversationId: active.id, ptId: active.ptId, message: input }),
       });
       setInput("");
-      fetchMessages(active.id);
+      mutateMessages();
     } catch (err) {
       console.error("Failed to send message:", err);
     }
   }
 
   const handleSelectConversation = (conv) => {
-    setActive(conv);
-    fetchMessages(conv.id);
+    setSelectedConv(conv);
   };
 
   return (

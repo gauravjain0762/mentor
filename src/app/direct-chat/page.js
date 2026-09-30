@@ -1,6 +1,7 @@
 "use client";
 
-import { useState, useEffect, useRef, Suspense } from "react";
+import { useEffect, useRef, useState, Suspense } from "react";
+import useSWR from "swr";
 import { useSearchParams } from "next/navigation";
 import Image from "next/image";
 import { useRouter } from "next/navigation";
@@ -12,53 +13,32 @@ import { apiFetch } from "@/lib/api";
 function DirectChatContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
-  const [trainer, setTrainer] = useState(null);
-  const [conversation, setConversation] = useState(null);
-  const [messages, setMessages] = useState([]);
   const [input, setInput] = useState("");
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState("");
   const bottomRef = useRef(null);
 
-  useEffect(() => {
-    const trainerName = searchParams.get("trainer");
-    if (trainerName) {
-      fetchConversationByTrainer(decodeURIComponent(trainerName));
-    }
-  }, [searchParams]);
+  const trainerNameParam = searchParams.get("trainer");
+  const trainerName = trainerNameParam ? decodeURIComponent(trainerNameParam) : null;
 
-  async function fetchConversationByTrainer(trainerName) {
-    try {
-      setLoading(true);
-      const data = await apiFetch("/api/mentor/messages/conversations");
-      const conversations = data.data?.conversations || [];
+  const { data: convListData, isLoading: convLoading, error: convErr } = useSWR("/api/mentor/messages/conversations");
+  const conversations = convListData?.data?.conversations || [];
+  const found = trainerName ? conversations.find(c => c.ptName.toLowerCase() === trainerName.toLowerCase()) : null;
 
-      const found = conversations.find(c => c.ptName.toLowerCase() === trainerName.toLowerCase());
-      if (found) {
-        setConversation(found);
-        setTrainer({
-          name: found.ptName,
-          img: found.ptAvatar,
-          online: found.status === "online",
-          role: "Personal Trainer",
-        });
+  const conversation = found || null;
+  const trainer = conversation
+    ? { name: conversation.ptName, img: conversation.ptAvatar, online: conversation.status === "online", role: "Personal Trainer" }
+    : null;
 
-        const msgData = await apiFetch(`/api/mentor/messages/conversations/${found.id}`);
-        setMessages(msgData.data?.messages || []);
-        setError("");
-      } else {
-        setError("Trainer conversation not found");
-      }
-    } catch (err) {
-      setError(err.message || "Failed to load conversation");
-    } finally {
-      setLoading(false);
-    }
-  }
+  const { data: msgData, mutate: mutateMessages } = useSWR(
+    conversation ? `/api/mentor/messages/conversations/${conversation.id}` : null
+  );
+  const messages = msgData?.data?.messages || [];
+
+  const loading = convLoading && !convListData;
+  const error = convErr?.message || (!loading && trainerName && !found ? "Trainer conversation not found" : "");
 
   useEffect(() => {
     bottomRef.current?.scrollIntoView({ behavior: "smooth" });
-  }, [messages]);
+  }, [messages.length]);
 
   async function sendMessage() {
     const text = input.trim();
@@ -71,8 +51,7 @@ function DirectChatContent() {
       });
 
       setInput("");
-      const msgData = await apiFetch(`/api/mentor/messages/conversations/${conversation.id}`);
-      setMessages(msgData.data?.messages || []);
+      mutateMessages();
     } catch (err) {
       console.error("Failed to send message:", err);
     }

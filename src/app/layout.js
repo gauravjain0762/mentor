@@ -1,4 +1,5 @@
 import { Montserrat } from "next/font/google";
+import Providers from "@/components/Providers";
 import "./globals.css";
 
 const montserrat = Montserrat({
@@ -15,7 +16,9 @@ export const metadata = {
 export default function RootLayout({ children }) {
   return (
     <html lang="en-US" className={montserrat.variable}>
-      <body>{children}</body>
+      <body>
+        <Providers>{children}</Providers>
+      </body>
     </html>
   );
 }

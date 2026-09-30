@@ -3,6 +3,7 @@
 import { useState, useEffect } from "react";
 import { usePathname } from "next/navigation";
 import Image from "next/image";
+import Link from "next/link";
 import styles from "./Sidebar.module.css";
 import { getMentorProfile } from "@/lib/api";
 
@@ -107,7 +108,7 @@ export default function Sidebar() {
       </button>
 
       {/* Logo */}
-      <a href="/dashboard" className={styles.logoLink}>
+      <Link href="/dashboard" className={styles.logoLink}>
         <Image
           src="https://res.cloudinary.com/dbazlbkfj/image/upload/v1781515780/Layer_x0020_1_1_klnh94.png"
           alt="UPT"
@@ -116,7 +117,7 @@ export default function Sidebar() {
           unoptimized
           className={styles.logoImg}
         />
-      </a>
+      </Link>
 
       {/* Subtitle */}
       <p className={`${styles.logoSub} ${collapsed ? styles.logoSubHidden : ""}`}>
@@ -154,7 +155,7 @@ export default function Sidebar() {
         {NAV.map((item) => {
           const isActive = pathname === item.href || pathname.startsWith(item.href + "/");
           return (
-            <a
+            <Link
               key={item.href}
               href={item.href}
               className={`${styles.navItem} ${isActive ? styles.active : ""} ${collapsed ? styles.navItemCollapsed : ""}`}
@@ -162,7 +163,7 @@ export default function Sidebar() {
             >
               <span className={styles.navIcon}>{item.icon}</span>
               {!collapsed && <span className={styles.navLabel}>{item.label}</span>}
-            </a>
+            </Link>
           );
         })}
       </nav>

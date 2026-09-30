@@ -1,6 +1,7 @@
 "use client";
 
-import { useState, useEffect, Fragment } from "react";
+import { useState, Fragment } from "react";
+import useSWR from "swr";
 import { useRouter } from "next/navigation";
 import Image from "next/image";
 import Sidebar from "@/components/Sidebar";
@@ -25,63 +26,46 @@ function formatDuration(mins) {
 export default function OperationalPage() {
   const router = useRouter();
 
-  const [logs, setLogs] = useState([]);
-  const [pagination, setPagination] = useState({ page: 1, limit: 20, total: 0, totalPages: 1 });
-  const [stats, setStats] = useState(null);
-  const [pts, setPts] = useState([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState("");
-
   const [search, setSearch] = useState("");
   const [dateRange, setDateRange] = useState("this_week");
   const [ptFilter, setPtFilter] = useState("");
   const [activityType, setActivityType] = useState("");
   const [currentPage, setCurrentPage] = useState(1);
+  const [appliedSearch, setAppliedSearch] = useState("");
 
   const [expandedId, setExpandedId] = useState(null);
-  const [expandedDetail, setExpandedDetail] = useState(null);
-  const [detailLoading, setDetailLoading] = useState(false);
+  const [deleteError, setDeleteError] = useState("");
   const [deletingId, setDeletingId] = useState(null);
 
-  useEffect(() => {
-    apiFetch("/api/mentor/assigned-pts?limit=100")
-      .then((res) => setPts(res.data?.pts || []))
-      .catch(() => setPts([]));
-  }, []);
+  const { data: ptsData } = useSWR("/api/mentor/assigned-pts?limit=100");
+  const pts = ptsData?.data?.pts || [];
 
-  useEffect(() => {
-    fetchLogs();
-  }, [dateRange, ptFilter, activityType, currentPage]);
+  const logsParams = new URLSearchParams();
+  logsParams.append("page", currentPage);
+  logsParams.append("limit", "20");
+  if (dateRange) logsParams.append("dateRange", dateRange);
+  if (ptFilter) logsParams.append("ptId", ptFilter);
+  if (activityType) logsParams.append("activityType", activityType);
+  if (appliedSearch) logsParams.append("search", appliedSearch);
+  const logsKey = `/api/mentor/operational-logs?${logsParams.toString()}`;
 
-  async function fetchLogs() {
-    try {
-      setLoading(true);
-      const params = new URLSearchParams();
-      params.append("page", currentPage);
-      params.append("limit", pagination.limit || 20);
-      if (dateRange) params.append("dateRange", dateRange);
-      if (ptFilter) params.append("ptId", ptFilter);
-      if (activityType) params.append("activityType", activityType);
-      if (search) params.append("search", search);
+  const { data: logsData, isLoading: logsLoading, error: logsError, mutate: mutateLogs } = useSWR(logsKey, { keepPreviousData: true });
+  const { data: statsData } = useSWR("/api/mentor/operational-logs/stats");
 
-      const [logsData, statsData] = await Promise.all([
-        apiFetch(`/api/mentor/operational-logs?${params.toString()}`),
-        apiFetch("/api/mentor/operational-logs/stats"),
-      ]);
+  const logs = logsData?.data?.logs || [];
+  const pagination = logsData?.data?.pagination || { page: 1, limit: 20, total: 0, totalPages: 1 };
+  const stats = statsData?.data || null;
+  const loading = logsLoading && !logsData;
+  const error = logsError?.message || deleteError;
 
-      setLogs(logsData.data?.logs || []);
-      setPagination(logsData.data?.pagination || { page: 1, limit: 20, total: 0, totalPages: 1 });
-      setStats(statsData.data || null);
-      setError("");
-    } catch (err) {
-      setError(err.message || "Failed to load operational logs");
-    } finally {
-      setLoading(false);
-    }
-  }
+  const { data: expandedDetailData, isLoading: detailLoading } = useSWR(
+    expandedId ? `/api/mentor/operational-logs/${expandedId}` : null
+  );
+  const expandedDetail = expandedDetailData?.data?.log || expandedDetailData?.data || null;
 
   function clearFilters() {
     setSearch("");
+    setAppliedSearch("");
     setDateRange("this_week");
     setPtFilter("");
     setActivityType("");
@@ -91,40 +75,23 @@ export default function OperationalPage() {
   function handleSearchSubmit(e) {
     e.preventDefault();
     setCurrentPage(1);
-    fetchLogs();
+    setAppliedSearch(search);
   }
 
-  async function toggleViewMore(logId) {
-    if (expandedId === logId) {
-      setExpandedId(null);
-      setExpandedDetail(null);
-      return;
-    }
-    setExpandedId(logId);
-    setExpandedDetail(null);
-    setDetailLoading(true);
-    try {
-      const res = await apiFetch(`/api/mentor/operational-logs/${logId}`);
-      setExpandedDetail(res.data?.log || res.data || null);
-    } catch (err) {
-      setExpandedDetail({ notes: err.message || "Failed to load log details" });
-    } finally {
-      setDetailLoading(false);
-    }
+  function toggleViewMore(logId) {
+    setExpandedId((prev) => (prev === logId ? null : logId));
   }
 
   async function handleDelete(logId) {
     if (!window.confirm("Delete this log entry? This cannot be undone.")) return;
     setDeletingId(logId);
+    setDeleteError("");
     try {
       await apiFetch(`/api/mentor/operational-logs/${logId}`, { method: "DELETE" });
-      if (expandedId === logId) {
-        setExpandedId(null);
-        setExpandedDetail(null);
-      }
-      fetchLogs();
+      if (expandedId === logId) setExpandedId(null);
+      mutateLogs();
     } catch (err) {
-      setError(err.message || "Failed to delete log");
+      setDeleteError(err.message || "Failed to delete log");
     } finally {
       setDeletingId(null);
     }

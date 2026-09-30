@@ -1,12 +1,12 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState } from "react";
+import useSWR from "swr";
 import { useRouter } from "next/navigation";
 import Image from "next/image";
 import Sidebar from "@/components/Sidebar";
 import TopBar from "@/components/TopBar";
 import styles from "./page.module.css";
-import { apiFetch } from "@/lib/api";
 
 function RetentionBar({ pct }) {
   const color = pct >= 85 ? "#22c55e" : pct >= 75 ? "#f8e396" : pct >= 65 ? "#ffaa44" : "#ff6b6b";
@@ -44,50 +44,32 @@ export default function PTDashboardPage() {
   const router = useRouter();
   const [page, setPage] = useState(1);
   const [openMenu, setOpenMenu] = useState(null);
-  const [trainers, setTrainers] = useState([]);
-  const [stats, setStats] = useState({ total: 0, healthy: 0, warnings: 0, critical: 0 });
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState("");
 
-  useEffect(() => {
-    fetchTrainers();
-  }, []);
+  const { data, isLoading: loading, error: fetchErr } = useSWR("/api/mentor/assigned-pts?sort=rating&limit=10");
+  const error = fetchErr?.message || "";
 
-  async function fetchTrainers() {
-    try {
-      setLoading(true);
-      const data = await apiFetch("/api/mentor/assigned-pts?sort=rating&limit=10");
-      const pts = data.data?.pts || [];
+  const pts = data?.data?.pts || [];
+  const trainers = pts.map((pt) => ({
+    id: pt.id,
+    name: pt.name,
+    tier: pt.experience > 5 ? "Elite Tier Trainer" : "Pro Tier Trainer",
+    gym: "Nexus Central Hub",
+    location: pt.location || "London, UK",
+    img: pt.avatar || "https://i.pravatar.cc/150?img=11",
+    activeClients: pt.activeClients || 0,
+    newClients: pt.newClients || 0,
+    retention: pt.retention || 75,
+    rating: pt.rating || 4.0,
+    aiScore: Math.round(pt.rating * 20) || 60,
+    status: pt.rating >= 4.5 ? "healthy" : pt.rating >= 4.0 ? "warning" : "critical",
+  }));
 
-      setTrainers(pts.map((pt) => ({
-        id: pt.id,
-        name: pt.name,
-        tier: pt.experience > 5 ? "Elite Tier Trainer" : "Pro Tier Trainer",
-        gym: "Nexus Central Hub",
-        location: pt.location || "London, UK",
-        img: pt.avatar || "https://i.pravatar.cc/150?img=11",
-        activeClients: pt.activeClients || 0,
-        newClients: pt.newClients || 0,
-        retention: pt.retention || 75,
-        rating: pt.rating || 4.0,
-        aiScore: Math.round(pt.rating * 20) || 60,
-        status: pt.rating >= 4.5 ? "healthy" : pt.rating >= 4.0 ? "warning" : "critical",
-      })));
-
-      setStats({
-        total: data.data?.total || 0,
-        healthy: pts.filter((p) => p.rating >= 4.5).length,
-        warnings: pts.filter((p) => p.rating >= 4.0 && p.rating < 4.5).length,
-        critical: pts.filter((p) => p.rating < 4.0).length,
-      });
-      setError("");
-    } catch (err) {
-      setError(err.message || "Failed to load trainers");
-      setTrainers([]);
-    } finally {
-      setLoading(false);
-    }
-  }
+  const stats = {
+    total: data?.data?.total || 0,
+    healthy: pts.filter((p) => p.rating >= 4.5).length,
+    warnings: pts.filter((p) => p.rating >= 4.0 && p.rating < 4.5).length,
+    critical: pts.filter((p) => p.rating < 4.0).length,
+  };
 
   function toggleMenu(name) {
     setOpenMenu((prev) => (prev === name ? null : name));

@@ -1,9 +1,8 @@
 "use client";
 
-import { useState, useEffect } from "react";
-import { useRouter } from "next/navigation";
+import { useState } from "react";
+import useSWR from "swr";
 import styles from "./RightAlerts.module.css";
-import { apiFetch } from "@/lib/api";
 
 const ALERT_TYPE_MAP = {
   no_confirmation: "warning",
@@ -53,35 +52,15 @@ const TYPE_CONFIG = {
 
 export default function RightAlerts() {
   const [open, setOpen] = useState(true);
-  const [alerts, setAlerts] = useState([]);
-  const [loading, setLoading] = useState(true);
+  const { data, isLoading: loading } = useSWR("/api/mentor/schedules/alerts?limit=10", { shouldRetryOnError: false });
 
-  useEffect(() => {
-    fetchAlerts();
-  }, []);
-
-  async function fetchAlerts() {
-    try {
-      setLoading(true);
-      const data = await apiFetch("/api/mentor/schedules/alerts?limit=10");
-      const apiAlerts = data.data?.alerts || [];
-
-      const transformed = apiAlerts.map(a => ({
-        id: a.id,
-        type: ALERT_TYPE_MAP[a.type] || "info",
-        title: a.type.replace(/_/g, " ").toUpperCase(),
-        desc: a.message,
-        time: new Date(a.createdAt).toLocaleDateString("en-US", { hour: "2-digit", minute: "2-digit" }),
-      }));
-
-      setAlerts(transformed);
-    } catch (err) {
-      console.log("Alerts not available");
-      setAlerts([]);
-    } finally {
-      setLoading(false);
-    }
-  }
+  const alerts = (data?.data?.alerts || []).map(a => ({
+    id: a.id,
+    type: ALERT_TYPE_MAP[a.type] || "info",
+    title: a.type.replace(/_/g, " ").toUpperCase(),
+    desc: a.message,
+    time: new Date(a.createdAt).toLocaleDateString("en-US", { hour: "2-digit", minute: "2-digit" }),
+  }));
 
   const criticalWarningCount = alerts.filter(a => a.type === "critical" || a.type === "warning").length;
 

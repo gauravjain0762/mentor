@@ -1,6 +1,7 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState } from "react";
+import useSWR from "swr";
 import Image from "next/image";
 import Sidebar from "@/components/Sidebar";
 import TopBar from "@/components/TopBar";
@@ -26,49 +27,29 @@ const CATEGORY_META = {
 };
 
 export default function ReportsPage() {
-  const [reports, setReports] = useState([]);
-  const [activities, setActivities] = useState([]);
-  const [summary, setSummary] = useState(null);
-  const [stats, setStats] = useState(null);
   const [search, setSearch] = useState("");
   const [statusFilter, setStatusFilter] = useState("all");
   const [priorityFilter, setPriorityFilter] = useState("all");
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState("");
   const [currentPage, setCurrentPage] = useState(1);
 
-  useEffect(() => {
-    fetchAllData();
-  }, [statusFilter, priorityFilter, currentPage]);
+  const reportsParams = new URLSearchParams();
+  if (statusFilter !== "all") reportsParams.append("status", statusFilter.toUpperCase());
+  if (priorityFilter !== "all") reportsParams.append("priority", priorityFilter.toUpperCase());
+  reportsParams.append("page", currentPage);
+  reportsParams.append("limit", "20");
+  const reportsKey = `/api/mentor/reports?${reportsParams.toString()}`;
 
-  async function fetchAllData() {
-    try {
-      setLoading(true);
-      const params = new URLSearchParams();
-      if (statusFilter !== "all") params.append("status", statusFilter.toUpperCase());
-      if (priorityFilter !== "all") params.append("priority", priorityFilter.toUpperCase());
-      if (search) params.append("search", search);
-      params.append("page", currentPage);
-      params.append("limit", "20");
+  const { data: reportsData, isLoading: reportsLoading, error: reportsErr, mutate: mutateReports } = useSWR(reportsKey, { keepPreviousData: true });
+  const { data: activitiesData } = useSWR("/api/mentor/reports/activity/feed?limit=10");
+  const { data: summaryData } = useSWR("/api/mentor/reports/summary");
+  const { data: statsData } = useSWR("/api/mentor/reports/stats?period=month");
 
-      const [reportsData, activitiesData, summaryData, statsData] = await Promise.all([
-        apiFetch(`/api/mentor/reports?${params.toString()}`),
-        apiFetch("/api/mentor/reports/activity/feed?limit=10"),
-        apiFetch("/api/mentor/reports/summary"),
-        apiFetch("/api/mentor/reports/stats?period=month"),
-      ]);
-
-      setReports(reportsData.data?.reports || []);
-      setActivities(activitiesData.data?.activities || []);
-      setSummary(summaryData.data?.summary || {});
-      setStats(statsData.data?.stats || {});
-      setError("");
-    } catch (err) {
-      setError(err.message || "Failed to load reports");
-    } finally {
-      setLoading(false);
-    }
-  }
+  const reports = reportsData?.data?.reports || [];
+  const activities = activitiesData?.data?.activities || [];
+  const summary = summaryData?.data?.summary || {};
+  const stats = statsData?.data?.stats || {};
+  const loading = reportsLoading && !reportsData;
+  const error = reportsErr?.message || "";
 
   async function handleStatusUpdate(reportId, newStatus) {
     try {
@@ -76,7 +57,7 @@ export default function ReportsPage() {
         method: "PUT",
         body: JSON.stringify({ status: newStatus }),
       });
-      fetchAllData();
+      mutateReports();
     } catch (err) {
       console.error("Failed to update report:", err);
     }

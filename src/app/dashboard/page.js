@@ -1,6 +1,7 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState } from "react";
+import useSWR from "swr";
 import { useRouter } from "next/navigation";
 import Sidebar from "@/components/Sidebar";
 import TopBar from "@/components/TopBar";
@@ -69,53 +70,25 @@ function Chart({ period, data, labels }) {
 export default function DashboardPage() {
   const router = useRouter();
   const [period, setPeriod] = useState("7D");
-  const [stats, setStats] = useState(null);
-  const [chartData, setChartData] = useState({ "7D": [], "30D": [] });
-  const [chartLabels, setChartLabels] = useState({ "7D": [], "30D": [] });
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState("");
 
-  useEffect(() => {
-    fetchDashboardData();
-  }, []);
+  const { data: overviewData, isLoading: overviewLoading, error: overviewErr } = useSWR("/api/mentor/dashboard/overview");
+  const stats = overviewData?.data?.stats || {};
 
-  useEffect(() => {
-    if (period && !chartData[period].length) {
-      fetchPerformanceData(period);
-    }
-  }, [period]);
+  // Both periods are fetched (and cached) up front so switching the 7D/30D toggle is instant.
+  const { data: chart7D } = useSWR("/api/mentor/dashboard/performance-trajectory?period=7D");
+  const { data: chart30D } = useSWR("/api/mentor/dashboard/performance-trajectory?period=30D");
 
-  async function fetchDashboardData() {
-    try {
-      setLoading(true);
-      const data = await apiFetch("/api/mentor/dashboard/overview");
-      setStats(data.data?.stats || {});
-      setError("");
+  const chartData = {
+    "7D": chart7D?.data?.chartData?.map((d) => d.score) || [],
+    "30D": chart30D?.data?.chartData?.map((d) => d.score) || [],
+  };
+  const chartLabels = {
+    "7D": chart7D?.data?.labels || [],
+    "30D": chart30D?.data?.labels || [],
+  };
 
-      await Promise.all([
-        fetchPerformanceData("7D"),
-        fetchPerformanceData("30D"),
-      ]);
-    } catch (err) {
-      setError(err.message || "Failed to load dashboard");
-      setStats({});
-    } finally {
-      setLoading(false);
-    }
-  }
-
-  async function fetchPerformanceData(per) {
-    try {
-      const data = await apiFetch(`/api/mentor/dashboard/performance-trajectory?period=${per}`);
-      const scores = data.data?.chartData?.map(d => d.score) || [];
-      const labels = data.data?.labels || [];
-
-      setChartData(prev => ({ ...prev, [per]: scores }));
-      setChartLabels(prev => ({ ...prev, [per]: labels }));
-    } catch (err) {
-      console.log(`Performance trajectory for ${per} not available`);
-    }
-  }
+  const loading = overviewLoading && !overviewData;
+  const error = overviewErr?.message || "";
 
   if (loading) return (
     <div className={styles.page}>

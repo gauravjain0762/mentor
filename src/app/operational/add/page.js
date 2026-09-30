@@ -1,6 +1,7 @@
 "use client";
 
-import { useState, useEffect, useRef } from "react";
+import { useState, useRef } from "react";
+import useSWR from "swr";
 import { useRouter } from "next/navigation";
 import Sidebar from "@/components/Sidebar";
 import TopBar from "@/components/TopBar";
@@ -35,21 +36,15 @@ function displayToIso(display) {
 export default function AddLogPage() {
   const router = useRouter();
 
-  const [pts, setPts] = useState([]);
-  const [ptsLoading, setPtsLoading] = useState(true);
+  const { data: ptsData, isLoading: ptsLoading } = useSWR("/api/mentor/assigned-pts?limit=100");
+  const pts = ptsData?.data?.pts || [];
+
   const [form, setForm] = useState({ pt: "", date: "", activityType: "", hours: "", minutes: "", notes: "" });
   const [dateText, setDateText] = useState("");
   const [submitted, setSubmitted] = useState(false);
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState("");
   const dateInputRef = useRef(null);
-
-  useEffect(() => {
-    apiFetch("/api/mentor/assigned-pts?limit=100")
-      .then((res) => setPts(res.data?.pts || []))
-      .catch(() => setPts([]))
-      .finally(() => setPtsLoading(false));
-  }, []);
 
   function set(field, value) {
     setForm((prev) => ({ ...prev, [field]: value }));

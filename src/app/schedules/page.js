@@ -1,6 +1,7 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState } from "react";
+import useSWR from "swr";
 import Image from "next/image";
 import Sidebar from "@/components/Sidebar";
 import RightAlerts from "@/components/RightAlerts";
@@ -25,73 +26,31 @@ const ALERT_COLORS = {
 };
 
 export default function SchedulesPage() {
-  const [schedules, setSchedules] = useState([]);
-  const [alerts, setAlerts] = useState([]);
-  const [alertSummary, setAlertSummary] = useState(null);
-  const [stats, setStats] = useState(null);
-  const [trainers, setTrainers] = useState([]);
   const [currentMonth, setCurrentMonth] = useState(new Date());
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState("");
   const [statusFilter, setStatusFilter] = useState("all");
 
-  useEffect(() => {
-    fetchAllData();
-  }, [currentMonth]);
+  const startDate = new Date(currentMonth.getFullYear(), currentMonth.getMonth(), 1).toISOString().split('T')[0];
+  const endDate = new Date(currentMonth.getFullYear(), currentMonth.getMonth() + 1, 0).toISOString().split('T')[0];
 
-  async function fetchAllData() {
-    try {
-      setLoading(true);
-      const startDate = new Date(currentMonth.getFullYear(), currentMonth.getMonth(), 1).toISOString().split('T')[0];
-      const endDate = new Date(currentMonth.getFullYear(), currentMonth.getMonth() + 1, 0).toISOString().split('T')[0];
+  // Optional: backend has a known schema mismatch on this endpoint, so failures fall back to an empty calendar.
+  const { data: schedData } = useSWR(`/api/mentor/schedules/range?startDate=${startDate}&endDate=${endDate}`, { shouldRetryOnError: false });
+  const schedules = schedData?.data?.schedulesByDate || {};
 
-      // Fetch schedules (optional - backend has schema mismatch)
-      try {
-        const schedData = await apiFetch(`/api/mentor/schedules/range?startDate=${startDate}&endDate=${endDate}`);
-        setSchedules(schedData.data?.schedulesByDate || {});
-      } catch (e) {
-        console.log("Schedules endpoint not available - backend needs schema fix");
-        setSchedules({});
-      }
+  // Required: trainers list drives the page's loading/error state.
+  const { data: trainData, error: trainersErr, isLoading: trainersLoading } = useSWR("/api/mentor/assigned-pts?limit=10");
+  const trainers = trainData?.data?.pts || [];
 
-      // Fetch trainers (required)
-      const trainData = await apiFetch("/api/mentor/assigned-pts?limit=10");
-      setTrainers(trainData.data?.pts || []);
+  const { data: alertData, mutate: mutateAlerts } = useSWR("/api/mentor/schedules/alerts?limit=50", { shouldRetryOnError: false });
+  const alerts = alertData?.data?.alerts || [];
 
-      // Fetch alerts (optional)
-      try {
-        const alertData = await apiFetch("/api/mentor/schedules/alerts?limit=50");
-        setAlerts(alertData.data?.alerts || []);
-      } catch (e) {
-        console.log("Alerts endpoint not available");
-        setAlerts([]);
-      }
+  const { data: summaryData } = useSWR("/api/mentor/schedules/alerts/summary", { shouldRetryOnError: false });
+  const alertSummary = summaryData?.data?.summary || {};
 
-      // Fetch alert summary (optional)
-      try {
-        const summaryData = await apiFetch("/api/mentor/schedules/alerts/summary");
-        setAlertSummary(summaryData.data?.summary || {});
-      } catch (e) {
-        console.log("Alert summary endpoint not available");
-        setAlertSummary({});
-      }
+  const { data: statsResp } = useSWR("/api/mentor/schedules/stats?period=month", { shouldRetryOnError: false });
+  const stats = statsResp?.data?.stats || {};
 
-      // Fetch stats (optional)
-      try {
-        const statsData = await apiFetch("/api/mentor/schedules/stats?period=month");
-        setStats(statsData.data?.stats || {});
-      } catch (e) {
-        console.log("Stats endpoint not available");
-        setStats({});
-      }
-
-      setError("");
-    } catch (err) {
-      setError(err.message || "Failed to load schedules");
-    } finally {
-      setLoading(false);
-    }
-  }
+  const loading = trainersLoading && !trainData;
+  const error = trainersErr?.message || "";
 
   async function handleAcknowledgeAlert(alertId) {
     try {
@@ -99,7 +58,7 @@ export default function SchedulesPage() {
         method: "PUT",
         body: JSON.stringify({ resolved: true, action: "acknowledged" }),
       });
-      fetchAllData();
+      mutateAlerts();
     } catch (err) {
       console.error("Failed to acknowledge alert:", err);
     }
