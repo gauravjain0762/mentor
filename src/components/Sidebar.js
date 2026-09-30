@@ -1,11 +1,11 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState } from "react";
+import useSWR from "swr";
 import { usePathname } from "next/navigation";
 import Image from "next/image";
 import Link from "next/link";
 import styles from "./Sidebar.module.css";
-import { getMentorProfile } from "@/lib/api";
 
 const NAV = [
   {
@@ -80,15 +80,14 @@ const NAV = [
 export default function Sidebar() {
   const pathname  = usePathname();
   const [collapsed, setCollapsed] = useState(false);
-  const [mentor, setMentor] = useState({ name: "Mentor", role: "Performance Mentor", avatar: "https://i.pravatar.cc/150?img=33" });
 
-  useEffect(() => {
-    // localStorage isn't available during SSR, so the real profile can only be read
-    // after mount — hydrating here (instead of a lazy useState initializer) keeps the
-    // server-rendered fallback text matching the client's first render.
-    // eslint-disable-next-line react-hooks/set-state-in-effect
-    setMentor(getMentorProfile());
-  }, []);
+  const { data } = useSWR("/api/mentor/me");
+  const profile = data?.data;
+  const mentor = {
+    name: profile?.fullName || [profile?.firstName, profile?.lastName].filter(Boolean).join(" ") || "Mentor",
+    title: profile?.title || "Performance Mentor",
+    avatar: profile?.profilePhoto || "https://i.pravatar.cc/150?img=33",
+  };
 
   return (
     <aside className={`${styles.sidebar} ${collapsed ? styles.sidebarCollapsed : ""}`}>
@@ -142,7 +141,7 @@ export default function Sidebar() {
         {!collapsed && (
           <div className={styles.userInfo}>
             <span className={styles.userName}>{mentor.name}</span>
-            <span className={styles.userRole}>{mentor.role}</span>
+            <span className={styles.userRole}>{mentor.title}</span>
           </div>
         )}
       </div>

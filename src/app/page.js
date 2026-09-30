@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect, useRef } from "react";
+import { mutate } from "swr";
 import { useRouter } from "next/navigation";
 import Image from "next/image";
 import { Cinzel } from "next/font/google";
@@ -51,12 +52,13 @@ export default function LoginPage() {
         localStorage.setItem("token", data.data.access_token);
         localStorage.setItem("refresh_token", data.data.refresh_token);
       }
-      // Persist mentor profile info in whatever shape the backend sent it, so the sidebar can show the real name.
-      const profile = data.data?.mentor || data.data?.user || data.data?.profile || null;
-      if (profile) {
-        localStorage.setItem("mentorProfile", JSON.stringify(profile));
-      } else {
-        localStorage.removeItem("mentorProfile");
+      // Prime the mentor profile (name/photo/title etc.) into the shared SWR cache right
+      // after login, so it's already there - not still loading - when the sidebar mounts.
+      try {
+        const me = await apiFetch("/api/mentor/me");
+        mutate("/api/mentor/me", me, { revalidate: false });
+      } catch (err) {
+        console.error("Failed to prefetch mentor profile:", err);
       }
       router.push("/dashboard");
     } catch (err) {
