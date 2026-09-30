@@ -8,38 +8,6 @@ import Sidebar from "@/components/Sidebar";
 import TopBar from "@/components/TopBar";
 import styles from "./page.module.css";
 
-function RetentionBar({ pct }) {
-  const color = pct >= 85 ? "#22c55e" : pct >= 75 ? "#f8e396" : pct >= 65 ? "#ffaa44" : "#ff6b6b";
-  return (
-    <div className={styles.retBar}>
-      <div className={styles.retFill} style={{ width: `${pct}%`, background: color }} />
-      <span className={styles.retLabel} style={{ color }}>{pct}%</span>
-    </div>
-  );
-}
-
-function Stars({ rating }) {
-  return (
-    <div className={styles.stars}>
-      <svg width="13" height="13" viewBox="0 0 24 24" fill="#f8e396">
-        <polygon points="12,2 15.09,8.26 22,9.27 17,14.14 18.18,21.02 12,17.77 5.82,21.02 7,14.14 2,9.27 8.91,8.26" />
-      </svg>
-      <span className={styles.ratingVal}>{rating}</span>
-    </div>
-  );
-}
-
-function ScoreBadge({ score }) {
-  const color = score >= 85 ? "#22c55e" : score >= 70 ? "#f8e396" : score >= 55 ? "#ffaa44" : "#ff6b6b";
-  const bg    = score >= 85 ? "#0d2a1a" : score >= 70 ? "#2a2400" : score >= 55 ? "#2a1600" : "#2a0a0a";
-  return (
-    <div className={styles.scoreBadge} style={{ background: bg, borderColor: color }}>
-      <span className={styles.scoreLabel} style={{ color }}>Score:</span>
-      <span className={styles.scoreVal} style={{ color }}>{score}</span>
-    </div>
-  );
-}
-
 export default function PTDashboardPage() {
   const router = useRouter();
   const [page, setPage] = useState(1);
@@ -57,10 +25,7 @@ export default function PTDashboardPage() {
     location: pt.location || "London, UK",
     img: pt.avatar || "https://i.pravatar.cc/150?img=11",
     activeClients: pt.activeClients || 0,
-    newClients: pt.newClients || 0,
-    retention: pt.retention || 75,
     rating: pt.rating || 4.0,
-    aiScore: Math.round(pt.rating * 20) || 60,
     status: pt.rating >= 4.5 ? "healthy" : pt.rating >= 4.0 ? "warning" : "critical",
   }));
 
@@ -68,7 +33,7 @@ export default function PTDashboardPage() {
     total: data?.data?.total || 0,
     healthy: pts.filter((p) => p.rating >= 4.5).length,
     warnings: pts.filter((p) => p.rating >= 4.0 && p.rating < 4.5).length,
-    critical: pts.filter((p) => p.rating < 4.0).length,
+    critical: 0,
   };
 
   function toggleMenu(name) {
@@ -185,16 +150,16 @@ export default function PTDashboardPage() {
                       <span className={styles.clientNum}>{t.activeClients}</span>
                     </td>
                     <td className={`${styles.td} ${styles.tdCenter}`}>
-                      <span className={styles.newClient}>+{t.newClients}</span>
-                    </td>
-                    <td className={styles.td}>
-                      <RetentionBar pct={t.retention} />
+                      -
                     </td>
                     <td className={`${styles.td} ${styles.tdCenter}`}>
-                      <Stars rating={t.rating} />
+                      -
                     </td>
                     <td className={`${styles.td} ${styles.tdCenter}`}>
-                      <ScoreBadge score={t.aiScore} />
+                      -
+                    </td>
+                    <td className={`${styles.td} ${styles.tdCenter}`}>
+                      -
                     </td>
                     <td className={`${styles.td} ${styles.tdCenter}`}>
                       <span className={`${styles.statusDot} ${styles[`dot_${t.status}`]}`} />
