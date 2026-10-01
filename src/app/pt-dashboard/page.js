@@ -23,8 +23,9 @@ export default function PTDashboardPage() {
     tier: pt.experience > 5 ? "Elite Tier Trainer" : "Pro Tier Trainer",
     gym: "Nexus Central Hub",
     location: pt.location || "London, UK",
-    img: pt.avatar || null,
-    activeClients: pt.activeClients || 0,
+    // pravatar.cc is a seeded demo avatar service; its images are not trainer photos.
+    img: pt.avatar && !pt.avatar.includes("pravatar.cc") ? pt.avatar : null,
+    totalClients: pt.totalClients || 0,
     rating: pt.rating || 4.0,
     status: pt.rating >= 4.5 ? "healthy" : pt.rating >= 4.0 ? "warning" : "critical",
   }));
@@ -57,24 +58,6 @@ export default function PTDashboardPage() {
               <p className={styles.pageSubtitle}>
                 Monitor performance, engagement, and progress of all assigned Personal Trainers.
               </p>
-            </div>
-            <div className={styles.headActions}>
-              {/* <button className={styles.onboardBtn}>
-                <svg width="14" height="14" viewBox="0 0 24 24" fill="none">
-                  <circle cx="12" cy="12" r="9" stroke="currentColor" strokeWidth="2" />
-                  <line x1="12" y1="8" x2="12" y2="16" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
-                  <line x1="8" y1="12" x2="16" y2="12" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
-                </svg>
-                ONBOARD NEW PT
-              </button> */}
-              <button className={styles.filterBtn}>
-                <svg width="14" height="14" viewBox="0 0 24 24" fill="none">
-                  <line x1="4" y1="6" x2="20" y2="6" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
-                  <line x1="7" y1="12" x2="17" y2="12" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
-                  <line x1="10" y1="18" x2="14" y2="18" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
-                </svg>
-                FILTERS
-              </button>
             </div>
           </div>
 
@@ -119,7 +102,7 @@ export default function PTDashboardPage() {
                 <tr className={styles.thead}>
                   <th className={styles.th}>TRAINER PROFILE</th>
                   <th className={styles.th}>GYM / LOCATION</th>
-                  <th className={styles.th}>ACTIVE CLIENTS</th>
+                  <th className={styles.th}>TOTAL CLIENTS</th>
                   <th className={styles.th}>NEW CLIENTS THIS MONTH</th>
                   <th className={styles.th}>RETENTION %</th>
                   <th className={styles.th}>AVG RATING</th>
@@ -147,7 +130,7 @@ export default function PTDashboardPage() {
                       <p className={styles.gymLoc}>{t.location}</p>
                     </td>
                     <td className={`${styles.td} ${styles.tdCenter}`}>
-                      <span className={styles.clientNum}>{t.activeClients}</span>
+                      <span className={styles.clientNum}>{t.totalClients}</span>
                     </td>
                     <td className={`${styles.td} ${styles.tdCenter}`}>
                       -

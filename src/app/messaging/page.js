@@ -6,8 +6,13 @@ import { useSearchParams } from "next/navigation";
 import Image from "next/image";
 import Sidebar from "@/components/Sidebar";
 import TopBar from "@/components/TopBar";
+import Avatar from "@/components/Avatar";
 import styles from "./page.module.css";
 import { apiFetch } from "@/lib/api";
+
+function trainerPhoto(url) {
+  return url && !url.includes("pravatar.cc") ? url : null;
+}
 
 function HighlightText({ text, highlights }) {
   if (!highlights?.length) return <span>{text}</span>;
@@ -157,7 +162,7 @@ function MessagingContent() {
                     onClick={() => handleSelectConversation(conv)}
                   >
                     <div style={{ width: 28, height: 28, flexShrink: 0, borderRadius: 6, overflow: "hidden" }}>
-                      <Image src={conv.ptAvatar} alt={conv.ptName} width={28} height={28} unoptimized style={{ borderRadius: 6, objectFit: "cover" }} />
+                      <Avatar src={trainerPhoto(conv.ptAvatar)} name={conv.ptName} size={28} className={styles.convAvatar} />
                     </div>
 
                     <div className={styles.convInfo}>
@@ -181,7 +186,7 @@ function MessagingContent() {
             {active && (
             <div className={styles.chatHeader}>
               <div className={styles.chatHeaderLeft}>
-                <Image src={active.ptAvatar} alt={active.ptName} width={36} height={36} unoptimized style={{ borderRadius: 8, objectFit: "cover" }} />
+                <Avatar src={trainerPhoto(active.ptAvatar)} name={active.ptName} size={36} className={styles.headerAvatar} />
                 <div style={{ marginLeft: 12 }}>
                   <p className={styles.chatHeaderName}>{active.ptName}</p>
                 </div>
@@ -206,7 +211,7 @@ function MessagingContent() {
                   {messages.map((msg) => (
                     <div key={msg.id} className={`${styles.msgRow} ${msg.senderType === "mentor" ? styles.msgRowMe : ""}`}>
                       {msg.senderType !== "mentor" && (
-                        <Image src={active.ptAvatar} alt={msg.senderName} width={28} height={28} unoptimized className={styles.msgAvatar} />
+                        <Avatar src={trainerPhoto(active.ptAvatar)} name={msg.senderName || active.ptName} size={28} className={styles.msgAvatar} />
                       )}
 
                       <div className={styles.msgContent}>
