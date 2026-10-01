@@ -5,6 +5,7 @@ import useSWR from "swr";
 import { usePathname } from "next/navigation";
 import Image from "next/image";
 import Link from "next/link";
+import Avatar from "@/components/Avatar";
 import styles from "./Sidebar.module.css";
 
 const NAV = [
@@ -86,7 +87,7 @@ export default function Sidebar() {
   const mentor = {
     name: profile?.fullName || [profile?.firstName, profile?.lastName].filter(Boolean).join(" ") || "Mentor",
     title: profile?.title || "Performance Mentor",
-    avatar: profile?.profilePhoto || "https://i.pravatar.cc/150?img=33",
+    avatar: profile?.profilePhoto || null,
   };
 
   return (
@@ -129,14 +130,7 @@ export default function Sidebar() {
       {/* User */}
       <div className={styles.userRow}>
         <div className={styles.avatar}>
-          <Image
-            src={mentor.avatar}
-            alt={mentor.name}
-            width={42}
-            height={42}
-            unoptimized
-            className={styles.avatarImg}
-          />
+          <Avatar src={mentor.avatar} name={mentor.name} size={42} className={styles.avatarImg} />
         </div>
         {!collapsed && (
           <div className={styles.userInfo}>

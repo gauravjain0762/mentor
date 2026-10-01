@@ -2,10 +2,18 @@
 
 import useSWR from "swr";
 import { useRouter, useParams } from "next/navigation";
-import Image from "next/image";
 import Sidebar from "@/components/Sidebar";
 import TopBar from "@/components/TopBar";
+import Avatar from "@/components/Avatar";
 import styles from "./page.module.css";
+
+function formatDate(value) {
+  const d = new Date(value);
+  if (Number.isNaN(d.getTime())) return "--";
+  const mm = String(d.getMonth() + 1).padStart(2, "0");
+  const dd = String(d.getDate()).padStart(2, "0");
+  return `${mm}/${dd}/${d.getFullYear()}`;
+}
 
 export default function PTProfilePage() {
   const router = useRouter();
@@ -50,14 +58,7 @@ export default function PTProfilePage() {
           {/* Header */}
           <div className={styles.header}>
             <div className={styles.profileTop}>
-              <Image
-                src={pt.avatar || "https://i.pravatar.cc/150?img=11"}
-                alt={pt.name}
-                width={80}
-                height={80}
-                unoptimized
-                className={styles.avatar}
-              />
+              <Avatar src={pt.avatar} name={pt.name} size={80} className={styles.avatar} />
               <div className={styles.headerInfo}>
                 <h1 className={styles.title}>{pt.name}</h1>
                 <p className={styles.subtitle}>{pt.specialization}</p>
@@ -69,24 +70,12 @@ export default function PTProfilePage() {
           {/* Stats grid */}
           <div className={styles.statsGrid}>
             <div className={styles.statBox}>
-              <p className={styles.statLabel}>EXPERIENCE</p>
-              <span className={styles.statValue}>{pt.experience} years</span>
-            </div>
-            <div className={styles.statBox}>
-              <p className={styles.statLabel}>RATING</p>
-              <span className={styles.statValue}>⭐ {pt.rating}/5</span>
-            </div>
-            <div className={styles.statBox}>
-              <p className={styles.statLabel}>ACTIVE CLIENTS</p>
-              <span className={styles.statValue}>{pt.activeClients}</span>
-            </div>
-            <div className={styles.statBox}>
               <p className={styles.statLabel}>TOTAL CLIENTS</p>
               <span className={styles.statValue}>{pt.totalClients}</span>
             </div>
             <div className={styles.statBox}>
               <p className={styles.statLabel}>JOIN DATE</p>
-              <span className={styles.statValue}>{new Date(pt.joinDate).toLocaleDateString("en-US")}</span>
+              <span className={styles.statValue}>{formatDate(pt.joinDate)}</span>
             </div>
             <div className={styles.statBox}>
               <p className={styles.statLabel}>STATUS</p>

@@ -3,9 +3,9 @@
 import { useState } from "react";
 import useSWR from "swr";
 import { useRouter } from "next/navigation";
-import Image from "next/image";
 import Sidebar from "@/components/Sidebar";
 import TopBar from "@/components/TopBar";
+import Avatar from "@/components/Avatar";
 import styles from "./page.module.css";
 
 export default function PTDashboardPage() {
@@ -23,7 +23,7 @@ export default function PTDashboardPage() {
     tier: pt.experience > 5 ? "Elite Tier Trainer" : "Pro Tier Trainer",
     gym: "Nexus Central Hub",
     location: pt.location || "London, UK",
-    img: pt.avatar || "https://i.pravatar.cc/150?img=11",
+    img: pt.avatar || null,
     activeClients: pt.activeClients || 0,
     rating: pt.rating || 4.0,
     status: pt.rating >= 4.5 ? "healthy" : pt.rating >= 4.0 ? "warning" : "critical",
@@ -134,7 +134,7 @@ export default function PTDashboardPage() {
                     <td className={styles.td}>
                       <div className={styles.profileCell}>
                         <div className={`${styles.avatar} ${styles[`av_${t.status}`]}`}>
-                          <Image src={t.img} alt={t.name} width={38} height={38} unoptimized className={styles.avatarImg} />
+                          <Avatar src={t.img} name={t.name} size={38} className={styles.avatarImg} />
                         </div>
                         <div>
                           <p className={styles.trainerName}>{t.name}</p>
