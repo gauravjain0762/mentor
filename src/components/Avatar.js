@@ -31,7 +31,14 @@ export default function Avatar({ src, name, size = 32, className = "" }) {
   return (
     <div
       className={`${styles.initials} ${className}`}
-      style={{ width: size, height: size, fontSize: Math.max(9, Math.round(size * 0.36)) }}
+      style={{
+        width: size,
+        height: size,
+        fontSize: Math.max(9, Math.round(size * 0.36)),
+        display: "flex",
+        alignItems: "center",
+        justifyContent: "center",
+      }}
       aria-label={name || "Avatar"}
     >
       {getInitials(name)}

@@ -8,19 +8,6 @@
   flex-shrink: 0;
 }
 
-.bell {
-  background: none;
-  border: none;
-  color: #F8E396;
-  cursor: pointer;
-  padding: 6px;
-  border-radius: 7px;
-  display: flex;
-  align-items: center;
-  transition: color 0.2s;
-}
-.bell:hover { color: #F8E396; }
-
 .logout {
   background: none;
   border: 1px solid rgba(248, 227, 150, 0.25);
