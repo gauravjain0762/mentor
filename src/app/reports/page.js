@@ -1,349 +1,171 @@
 "use client";
 
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import useSWR from "swr";
-import Image from "next/image";
+import { apiFetch } from "@/lib/api";
 import Sidebar from "@/components/Sidebar";
 import TopBar from "@/components/TopBar";
 import styles from "./page.module.css";
-import { apiFetch } from "@/lib/api";
+import FeedbackSection from "./FeedbackSection";
 
-const PRIORITY_META = {
-  CRITICAL: { dot: styles.dotRed,    label: "CRITICAL" },
-  HIGH:     { dot: styles.dotOrange, label: "HIGH" },
-  ROUTINE:  { dot: styles.dotGreen,  label: "ROUTINE" },
+const shortId = (id = "") => id.slice(-6).toUpperCase();
+const prettyDate = (date) => {
+  if (!date) return "—";
+  const parsedDate = new Date(date);
+  return Number.isNaN(parsedDate.getTime()) ? "—" : parsedDate.toLocaleDateString("en-US", { month: "short", day: "2-digit", year: "numeric" });
 };
-const PRIORITY_FALLBACK = { dot: styles.dotGreen, label: "" };
-
-const STATUS_META = {
-  OPEN:     styles.statusOpen,
-  IN_REVIEW: styles.statusPending,
-  RESOLVED: styles.statusResolved,
+const prettyTime = (date) => {
+  if (!date) return "";
+  const parsedDate = new Date(date);
+  return Number.isNaN(parsedDate.getTime()) ? "" : parsedDate.toLocaleTimeString("en-US", { hour: "numeric", minute: "2-digit" }).toLowerCase().replace(" ", "");
 };
-
-const CATEGORY_META = {
-  CONDUCT:     styles.catConduct,
-  TECHNICAL:   styles.catTechnical,
-  PERFORMANCE: styles.catPerformance,
+const sessionSlot = (row) => {
+  if (row.slot || row.sessionSlot || row.slotTime) return row.slot || row.sessionSlot || row.slotTime;
+  const start = prettyTime(row.booking?.timeSlot?.startTime);
+  const end = prettyTime(row.booking?.timeSlot?.endTime);
+  return start && end ? `${start} - ${end}` : "—";
 };
+const trainerName = (report) => report?.trainer?.name || report?.trainerName || "";
+const customerName = (report) => report?.customer?.name || report?.customerName || "";
+const reportTypeValue = (report) => report?.reportType || (report?.type === "TRAINER_REPORT" ? "CUSTOMER_REPORTED_TRAINER" : report?.type === "CUSTOMER_REPORT" ? "TRAINER_REPORTED_CUSTOMER" : "");
+const reportedBy = (report) => reportTypeValue(report) === "CUSTOMER_REPORTED_TRAINER"
+  ? `Customer — ${customerName(report) || "—"}`
+  : `Trainer — ${trainerName(report) || "—"}`;
+const titleCase = (value = "") => value.toLowerCase().replace(/_/g, " ").replace(/\b\w/g, (letter) => letter.toUpperCase());
 
 export default function ReportsPage() {
-  const [search, setSearch] = useState("");
-  const [statusFilter, setStatusFilter] = useState("all");
-  const [priorityFilter, setPriorityFilter] = useState("all");
-  const [currentPage, setCurrentPage] = useState(1);
+  const [tab, setTab] = useState("reports");
+  const [status, setStatus] = useState("all");
+  const [reportType, setReportType] = useState("all");
+  const [category, setCategory] = useState("all");
+  const [trainer, setTrainer] = useState("all");
+  const [customer, setCustomer] = useState("all");
+  const [page, setPage] = useState(1);
+  const [selected, setSelected] = useState(null);
+  const [selectedCancelled, setSelectedCancelled] = useState(null);
+  const [resolvingId, setResolvingId] = useState(null);
+  const [resolveError, setResolveError] = useState("");
 
-  const reportsParams = new URLSearchParams();
-  if (statusFilter !== "all") reportsParams.append("status", statusFilter.toUpperCase());
-  if (priorityFilter !== "all") reportsParams.append("priority", priorityFilter.toUpperCase());
-  reportsParams.append("page", currentPage);
-  reportsParams.append("limit", "20");
-  const reportsKey = `/api/mentor/reports?${reportsParams.toString()}`;
+  const params = new URLSearchParams({ page: String(page), limit: "20" });
+  if (status !== "all") params.set("status", status);
+  const { data, error, isLoading, mutate: mutateReports } = useSWR(`/api/mentor/reports?${params}`, { keepPreviousData: true });
+  const cancelledParams = new URLSearchParams({ page: String(page), pageSize: "10" });
+  const { data: cancelledData, error: cancelledError, isLoading: cancelledLoading } = useSWR(`/api/cancelled-sessions/mentor/me?${cancelledParams}`, { keepPreviousData: true });
+  const reports = data?.data?.reports || [];
+  const pagination = data?.data?.pagination || {};
+  const cancelledSessions = cancelledData?.data?.sessions || [];
+  const cancelledPagination = cancelledData?.data?.pagination || {};
 
-  const { data: reportsData, isLoading: reportsLoading, error: reportsErr, mutate: mutateReports } = useSWR(reportsKey, { keepPreviousData: true });
-  const { data: activitiesData } = useSWR("/api/mentor/reports/activity/feed?limit=10");
-  const { data: summaryData } = useSWR("/api/mentor/reports/summary");
-  const { data: statsData } = useSWR("/api/mentor/reports/stats?period=month");
+  const trainers = useMemo(() => [...new Set((tab === "reports" ? reports.map(trainerName) : cancelledSessions.map((item) => item.trainer?.name)).filter(Boolean))], [reports, cancelledSessions, tab]);
+  const customers = useMemo(() => [...new Set((tab === "reports" ? reports.map(customerName) : cancelledSessions.map((item) => item.customer?.name)).filter(Boolean))], [reports, cancelledSessions, tab]);
+  const categories = useMemo(() => [...new Set(reports.map((item) => item.reason).filter(Boolean))], [reports]);
+  const filtered = reports.filter((item) =>
+    (trainer === "all" || trainerName(item) === trainer) &&
+    (customer === "all" || customerName(item) === customer) &&
+    (category === "all" || item.reason === category)
+  );
+  const filteredCancelled = cancelledSessions.filter((item) =>
+    (trainer === "all" || item.trainer?.name === trainer) &&
+    (customer === "all" || item.customer?.name === customer)
+  );
 
-  const reports = reportsData?.data?.reports || [];
-  const activities = activitiesData?.data?.activities || [];
-  const summary = summaryData?.data?.summary || {};
-  const stats = statsData?.data?.stats || {};
-  const loading = reportsLoading && !reportsData;
-  const error = reportsErr?.message || "";
-
-  async function handleStatusUpdate(reportId, newStatus) {
+  async function handleResolve(reportId) {
+    setResolvingId(reportId);
+    setResolveError("");
     try {
-      await apiFetch(`/api/mentor/reports/${reportId}`, {
+      const report = reports.find((item) => item.id === reportId);
+      const reportType = reportTypeValue(report);
+      await apiFetch(`/api/mentor/all-reports/${reportId}/resolve`, {
         method: "PUT",
-        body: JSON.stringify({ status: newStatus }),
+        body: JSON.stringify({ reportType }),
       });
-      mutateReports();
-    } catch (err) {
-      console.error("Failed to update report:", err);
+      await mutateReports();
+    } catch (updateError) {
+      setResolveError(updateError.message || "Could not resolve this report.");
+    } finally {
+      setResolvingId(null);
     }
   }
-
-  const filtered = reports.filter((t) =>
-    !search ||
-    t.id.toLowerCase().includes(search.toLowerCase()) ||
-    t.trainerName.toLowerCase().includes(search.toLowerCase())
-  );
-
-  if (loading) return (
-    <div className={styles.layout}>
-      <Sidebar />
-      <main className={styles.main}>
-        <TopBar />
-        <div style={{ display: "flex", alignItems: "center", justifyContent: "center", height: "calc(100vh - 120px)", color: "#666" }}>Loading reports...</div>
-      </main>
-    </div>
-  );
-
-  if (error) return (
-    <div className={styles.layout}>
-      <Sidebar />
-      <main className={styles.main}>
-        <TopBar />
-        <div style={{ display: "flex", alignItems: "center", justifyContent: "center", height: "calc(100vh - 120px)", color: "#ff6b6b" }}>{error}</div>
-      </main>
-    </div>
-  );
 
   return (
     <div className={styles.layout}>
       <Sidebar />
       <main className={styles.main}>
         <TopBar />
-
         <div className={styles.content}>
+          <header className={styles.pageHead}>
+            <h1 className={styles.pageTitle}>Cancelled &amp; reports</h1>
+            <p className={styles.pageSubtitle}>Manage and resolve trainer support requests</p>
+          </header>
 
-          {/* Page header */}
-          <div className={styles.pageHead}>
-            <div>
-              <h1 className={styles.pageTitle}>Support Reports</h1>
-              <p className={styles.pageSubtitle}>Manage and resolve trainer-related reports and incidents.</p>
-            </div>
+          <div className={styles.peopleFilters}>
+            <label className={styles.filterField}><span>TRAINER</span><select value={trainer} onChange={(event) => setTrainer(event.target.value)}><option value="all">All trainers</option>{trainers.map((name) => <option key={name}>{name}</option>)}</select></label>
+            <label className={styles.filterField}><span>CUSTOMER</span><select value={customer} onChange={(event) => setCustomer(event.target.value)}><option value="all">All customers</option>{customers.map((name) => <option key={name}>{name}</option>)}</select></label>
           </div>
 
-          {/* Stat cards */}
-          <div className={styles.statsRow}>
-            <div className={styles.statCard}>
-              <div className={styles.statIcon}>
-                <svg width="20" height="20" viewBox="0 0 24 24" fill="none">
-                  <path d="M3 18v-6a9 9 0 0 1 18 0v6" stroke="#f8e396" strokeWidth="2" strokeLinecap="round"/>
-                  <path d="M21 19a2 2 0 0 1-2 2h-1a2 2 0 0 1-2-2v-3a2 2 0 0 1 2-2h3z" stroke="#f8e396" strokeWidth="2"/>
-                  <path d="M3 19a2 2 0 0 0 2 2h1a2 2 0 0 0 2-2v-3a2 2 0 0 0-2-2H3z" stroke="#f8e396" strokeWidth="2"/>
-                </svg>
-              </div>
-              <div>
-                <p className={styles.statLabel}>OPEN TICKETS</p>
-                <p className={styles.statValue}>{summary?.openCount || 0}</p>
-                <span className={styles.badgeStat + " " + styles.badgeGreen}>Active</span>
-              </div>
+          <section className={styles.statsRow} aria-label="Report summary">
+            {[
+              ["CANCELLED BY TRAINER", cancelledPagination.total ?? cancelledSessions.length, "Trainer cancellations", "⊗"],
+              ["REPORTED SESSIONS", pagination.total ?? reports.length, "Matching reports", "ⓘ"],
+            ].map(([label, value, caption, icon]) => <article className={styles.statCard} key={label}><span className={styles.statIcon}>{icon}</span><div><p className={styles.statLabel}>{label}</p><p className={styles.statValue}>{value}</p><span className={styles.statCaption}>{caption}</span></div></article>)}
+          </section>
+
+          <nav className={styles.tabs} aria-label="Cancelled and reports">
+            <button className={tab === "cancelled" ? styles.activeTab : ""} onClick={() => { setTab("cancelled"); setPage(1); }}>Cancelled Sessions</button>
+            <button className={tab === "reports" ? styles.activeTab : ""} onClick={() => { setTab("reports"); setPage(1); }}>Reports</button>
+            <button className={tab === "feedback" ? styles.activeTab : ""} onClick={() => { setTab("feedback"); setPage(1); }}>Feedback</button>
+          </nav>
+
+          {tab === "feedback" ? <FeedbackSection /> : tab === "reports" ? <>
+            {resolveError && <p className={styles.resolveError} role="alert">{resolveError}</p>}
+            <div className={styles.tableFilters}>
+              <label className={styles.filterField}><span>STATUS</span><select value={status} onChange={(event) => { setStatus(event.target.value); setPage(1); }}><option value="all">All</option><option value="PENDING">Pending</option><option value="RESOLVED">Resolved</option><option value="REJECTED">Rejected</option></select></label>
+              <label className={styles.filterField}><span>REPORT TYPE</span><select value={reportType} onChange={(event) => { setReportType(event.target.value); setPage(1); }}><option value="all">All</option><option value="CUSTOMER_REPORTED_TRAINER">Customer reported trainer</option><option value="TRAINER_REPORTED_CUSTOMER">Trainer reported customer</option></select></label>
+              <label className={styles.filterField}><span>CATEGORY</span><select value={category} onChange={(event) => setCategory(event.target.value)}><option value="all">All</option>{categories.map((item) => <option key={item}>{item}</option>)}</select></label>
             </div>
-
-            <div className={styles.statCard}>
-              <div className={styles.statIcon}>
-                <svg width="20" height="20" viewBox="0 0 24 24" fill="none">
-                  <circle cx="12" cy="12" r="9" stroke="#f8e396" strokeWidth="2"/>
-                  <polyline points="7 12 10 15 17 9" stroke="#f8e396" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
-                </svg>
-              </div>
-              <div>
-                <p className={styles.statLabel}>RESOLVED</p>
-                <p className={styles.statValue}>{stats?.resolvedReports || 0}</p>
-                <span className={styles.badgeStat + " " + styles.badgeGrey}>This period</span>
-              </div>
+            <div className={styles.tableWrap}>
+              <table className={styles.table}>
+                <thead><tr>{["REPORT ID", "REPORTED BY", "CUSTOMER", "TRAINER", "REASON", "STATUS", "SESSION DATE", "REPORTED AT", "ACTION"].map((heading) => <th key={heading}>{heading}</th>)}</tr></thead>
+                <tbody>
+                  {isLoading ? <tr><td colSpan={9} className={styles.empty}>Loading reports…</td></tr> : error ? <tr><td colSpan={9} className={styles.empty}>{error.message}</td></tr> : filtered.filter((row) => reportType === "all" || reportTypeValue(row) === reportType).length === 0 ? <tr><td colSpan={9} className={styles.empty}>No reports found</td></tr> : filtered.filter((row) => reportType === "all" || reportTypeValue(row) === reportType).map((row) => <tr key={row.id}>
+                    <td className={styles.id}>{shortId(row.id)}</td><td>{row.reporterName || reportedBy(row)}</td><td>{customerName(row) || "—"}</td><td>{trainerName(row) || "—"}</td><td>{row.reason || "—"}</td>
+                    <td><span className={`${styles.status} ${styles[`status${titleCase(row.status).replace(/\s/g, "")}`] || ""}`}>{titleCase(row.status)}</span></td>
+                    <td>{prettyDate(row.sessionDate || row.booking?.timeSlot?.date || row.date)}</td><td>{prettyDate(row.createdAt || row.date)}</td>
+                    <td><div className={styles.reportActions}><button className={styles.viewButton} title="View report" aria-label={`View report ${shortId(row.id)}`} onClick={() => setSelected(row)}><svg width="17" height="17" viewBox="0 0 24 24" fill="none"><path d="M2 12s3.6-7 10-7 10 7 10 7-3.6 7-10 7S2 12 2 12Z" stroke="currentColor" strokeWidth="1.8"/><circle cx="12" cy="12" r="3" stroke="currentColor" strokeWidth="1.8"/></svg></button>{row.status !== "RESOLVED" && <button className={styles.resolveButton} onClick={() => handleResolve(row.id)} disabled={resolvingId === row.id}>{resolvingId === row.id ? "Saving…" : "Mark resolved"}</button>}</div></td>
+                  </tr>)}
+                </tbody>
+              </table>
+              <footer className={styles.pagination}><span>Showing page {page} of {pagination.totalPages || 1}</span><div><button disabled={page <= 1} onClick={() => setPage((value) => Math.max(1, value - 1))}>‹</button><b>{page}</b><button disabled={page >= (pagination.totalPages || 1)} onClick={() => setPage((value) => value + 1)}>›</button></div></footer>
             </div>
-
-            <div className={styles.statCard}>
-              <div className={styles.statIconRed}>
-                <svg width="20" height="20" viewBox="0 0 24 24" fill="none">
-                  <path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z" stroke="#ff6b6b" strokeWidth="2"/>
-                  <line x1="12" y1="9" x2="12" y2="13" stroke="#ff6b6b" strokeWidth="2" strokeLinecap="round"/>
-                  <circle cx="12" cy="17" r="1" fill="#ff6b6b"/>
-                </svg>
-              </div>
-              <div>
-                <p className={styles.statLabel}>CRITICAL</p>
-                <p className={styles.statValueRed}>{summary?.criticalCount || 0}</p>
-                <span className={styles.badgeStat + " " + styles.badgeRed}>Needs Action</span>
-              </div>
+          </> : <>
+            <div className={styles.tableWrap}>
+              <table className={styles.table}>
+                <thead><tr>{["BOOKING ID", "CUSTOMER", "TRAINER", "REASON", "SESSION DATE", "SLOT", "CANCELLED AT", "ACTION"].map((heading) => <th key={heading}>{heading}</th>)}</tr></thead>
+                <tbody>
+                  {cancelledLoading ? <tr><td colSpan={8} className={styles.empty}>Loading cancelled sessions…</td></tr> : cancelledError ? <tr><td colSpan={8} className={styles.empty}>{cancelledError.message}</td></tr> : filteredCancelled.length === 0 ? <tr><td colSpan={8} className={styles.empty}>No cancelled sessions found</td></tr> : filteredCancelled.map((session) => <tr key={session.bookingId}>
+                    <td className={styles.id}>{shortId(session.bookingId)}</td><td>{session.customer?.name || "—"}</td><td>{session.trainer?.name || "—"}</td><td>{session.reason || "—"}</td><td>{prettyDate(session.date)}</td><td>{session.slotTime || "—"}</td><td>{prettyDate(session.cancelledAt)}</td>
+                    <td><button className={styles.viewButton} title="View cancelled session" aria-label={`View cancelled session ${shortId(session.bookingId)}`} onClick={() => setSelectedCancelled(session)}><svg width="17" height="17" viewBox="0 0 24 24" fill="none"><path d="M2 12s3.6-7 10-7 10 7 10 7-3.6 7-10 7S2 12 2 12Z" stroke="currentColor" strokeWidth="1.8"/><circle cx="12" cy="12" r="3" stroke="currentColor" strokeWidth="1.8"/></svg></button></td>
+                  </tr>)}
+                </tbody>
+              </table>
+              <footer className={styles.pagination}><span>Showing page {page} of {cancelledPagination.totalPages || 1}</span><div><button disabled={page <= 1} onClick={() => setPage((value) => Math.max(1, value - 1))}>‹</button><b>{page}</b><button disabled={page >= (cancelledPagination.totalPages || 1)} onClick={() => setPage((value) => value + 1)}>›</button></div></footer>
             </div>
-
-            <div className={styles.statCard}>
-              <div className={styles.statIcon}>
-                <svg width="20" height="20" viewBox="0 0 24 24" fill="none">
-                  <rect x="3" y="3" width="7" height="7" rx="1" stroke="#f8e396" strokeWidth="2"/>
-                  <rect x="14" y="3" width="7" height="7" rx="1" stroke="#f8e396" strokeWidth="2"/>
-                  <rect x="3" y="14" width="7" height="7" rx="1" stroke="#f8e396" strokeWidth="2"/>
-                  <rect x="14" y="14" width="7" height="7" rx="1" stroke="#f8e396" strokeWidth="2"/>
-                </svg>
-              </div>
-              <div>
-                <p className={styles.statLabel}>TOTAL REPORTS</p>
-                <p className={styles.statValue}>{stats?.totalReports || 0}</p>
-                <span className={styles.badgeStat + " " + styles.badgeGrey}>All time</span>
-              </div>
-            </div>
-          </div>
-
-          {/* Filter bar */}
-          <div className={styles.filterBar}>
-            <div className={styles.filterLeft}>
-              <div className={styles.searchWrap}>
-                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" className={styles.searchIcon}>
-                  <circle cx="11" cy="11" r="7" stroke="currentColor" strokeWidth="2"/>
-                  <line x1="16.5" y1="16.5" x2="22" y2="22" stroke="currentColor" strokeWidth="2" strokeLinecap="round"/>
-                </svg>
-                <input
-                  className={styles.searchInput}
-                  placeholder="Filter by Trainer or ID"
-                  value={search}
-                  onChange={(e) => { setSearch(e.target.value); setCurrentPage(1); }}
-                />
-              </div>
-              <select className={styles.filterSelect} value={statusFilter} onChange={(e) => { setStatusFilter(e.target.value); setCurrentPage(1); }}>
-                <option value="all">All Status</option>
-                <option value="open">Open</option>
-                <option value="in_review">In Review</option>
-                <option value="resolved">Resolved</option>
-              </select>
-              <select className={styles.filterSelect} value={priorityFilter} onChange={(e) => { setPriorityFilter(e.target.value); setCurrentPage(1); }}>
-                <option value="all">All Priority</option>
-                <option value="critical">Critical</option>
-                <option value="high">High</option>
-                <option value="routine">Routine</option>
-              </select>
-            </div>
-          </div>
-
-          {/* Table */}
-          <div className={styles.tableWrap}>
-            <table className={styles.table}>
-              <thead>
-                <tr className={styles.thead}>
-                  <th className={styles.th}>TICKET ID</th>
-                  <th className={styles.th}>TRAINER</th>
-                  <th className={styles.th}>REPORTER</th>
-                  <th className={styles.th}>CATEGORY</th>
-                  <th className={styles.th}>PRIORITY</th>
-                  <th className={styles.th}>STATUS</th>
-                  <th className={styles.th}>DATE</th>
-                  <th className={styles.th}>ACTIONS</th>
-                </tr>
-              </thead>
-              <tbody>
-                {filtered.length === 0 ? (
-                  <tr><td colSpan={8} style={{ textAlign: "center", padding: "20px", color: "#666" }}>No reports found</td></tr>
-                ) : (
-                  filtered.map((row) => (
-                    <tr key={row.id} className={styles.tr}>
-                      <td className={styles.td}>
-                        <span className={styles.ticketId}>{row.id}</span>
-                      </td>
-                      <td className={styles.td}>
-                        <div className={styles.trainerCell}>
-                          <Image src={row.trainerAvatar || "https://i.pravatar.cc/150?img=11"} alt={row.trainerName} width={28} height={28} unoptimized className={styles.avatar} />
-                          <span className={styles.trainerName}>{row.trainerName}</span>
-                        </div>
-                      </td>
-                      <td className={styles.td}>
-                        <span className={styles.reporter}>{row.reporterName}</span>
-                      </td>
-                      <td className={styles.td}>
-                        <span className={`${styles.catBadge} ${CATEGORY_META[row.category] || ""}`}>{row.category}</span>
-                      </td>
-                      <td className={styles.td}>
-                        <div className={styles.priorityCell}>
-                          <span className={`${styles.priorityDot} ${(PRIORITY_META[row.priority] || PRIORITY_FALLBACK).dot}`} />
-                          <span className={styles.priorityText}>{row.priority}</span>
-                        </div>
-                      </td>
-                      <td className={styles.td}>
-                        <select className={`${styles.statusBadge} ${STATUS_META[row.status] || ""}`} value={row.status} onChange={(e) => handleStatusUpdate(row.id, e.target.value)} style={{ background: "inherit", border: "none", color: "inherit", cursor: "pointer" }}>
-                          <option value="OPEN">Open</option>
-                          <option value="IN_REVIEW">In Review</option>
-                          <option value="RESOLVED">Resolved</option>
-                        </select>
-                      </td>
-                      <td className={styles.td}>
-                        <span className={styles.dateText}>{new Date(row.date).toLocaleDateString("en-US")}</span>
-                      </td>
-                      <td className={styles.td}>
-                        <div className={styles.actions}>
-                          <button className={styles.actionBtn} title="View">
-                            <svg width="13" height="13" viewBox="0 0 24 24" fill="none">
-                              <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z" stroke="currentColor" strokeWidth="2"/>
-                              <circle cx="12" cy="12" r="3" stroke="currentColor" strokeWidth="2"/>
-                            </svg>
-                          </button>
-                        </div>
-                      </td>
-                    </tr>
-                  ))
-                )}
-              </tbody>
-            </table>
-
-            {/* Pagination */}
-            <div className={styles.pagination}>
-              <span className={styles.pageInfo}>Showing page {currentPage} of {Math.ceil((stats?.totalReports || 0) / 20) || 1}</span>
-              <div className={styles.pageBtns}>
-                <button className={styles.pageArrow} onClick={() => setCurrentPage(Math.max(1, currentPage - 1))} disabled={currentPage === 1}>&#8249;</button>
-                {[1, 2, 3].map((p) => (
-                  <button key={p} className={`${styles.pageNum} ${currentPage === p ? styles.pageActive : ""}`} onClick={() => setCurrentPage(p)}>{p}</button>
-                ))}
-                <span className={styles.pageDots}>...</span>
-                <button className={styles.pageArrow} onClick={() => setCurrentPage(currentPage + 1)}>&#8250;</button>
-              </div>
-            </div>
-          </div>
-
-          {/* Bottom grid */}
-          <div className={styles.bottomGrid}>
-
-            {/* Recent Activity */}
-            <div className={styles.bottomCard}>
-              <div className={styles.bottomCardHead}>
-                <span className={styles.bottomCardTitle}>Recent Activity Stream</span>
-                <span className={styles.syncBadge}>LIVE</span>
-              </div>
-              <div className={styles.activityList}>
-                {activities.length === 0 ? (
-                  <p style={{ color: "#666", padding: "10px 0" }}>No recent activities</p>
-                ) : (
-                  activities.map((a) => (
-                    <div key={a.id} className={styles.activityItem}>
-                      <span className={`${styles.activityDot} ${a.severity === "high" ? styles.actDotYellow : styles.actDotGreen}`} />
-                      <div>
-                        <p className={styles.activityText}>
-                          {a.text}
-                          {a.relatedReportId && <span className={styles.activityLink}>{a.relatedReportId}</span>}
-                        </p>
-                        <p className={styles.activityTime}>{new Date(a.timestamp).toLocaleDateString("en-US")}</p>
-                      </div>
-                    </div>
-                  ))
-                )}
-              </div>
-            </div>
-
-            {/* Report Stats */}
-            <div className={styles.bottomCard}>
-              <div className={styles.bottomCardHead}>
-                <span className={styles.bottomCardTitle}>Report Statistics</span>
-              </div>
-              <div className={styles.healthList}>
-                <div className={styles.healthItem}>
-                  <div className={styles.healthRow}>
-                    <span className={styles.healthLabel}>CRITICAL REPORTS</span>
-                    <span className={styles.healthVal}>{stats?.byPriority?.CRITICAL || 0}</span>
-                  </div>
-                  <div className={styles.progressTrack}>
-                    <div className={styles.progressBar} style={{ width: `${Math.min(100, ((stats?.byPriority?.CRITICAL || 0) / (stats?.totalReports || 1)) * 100)}%`, background: "#ff6b6b" }} />
-                  </div>
-                </div>
-                <div className={styles.healthItem}>
-                  <div className={styles.healthRow}>
-                    <span className={styles.healthLabel}>UNRESOLVED %</span>
-                    <span className={styles.healthVal}>{stats?.unresolvedPercentage || 0}%</span>
-                  </div>
-                  <div className={styles.progressTrack}>
-                    <div className={styles.progressBar} style={{ width: `${stats?.unresolvedPercentage || 0}%` }} />
-                  </div>
-                </div>
-              </div>
-              <p className={styles.healthFooter}>
-                {stats?.totalReports || 0} total reports tracked • Avg resolution: {stats?.avgResolutionTime || "N/A"}
-              </p>
-            </div>
-
-          </div>
-
+          </>}
         </div>
       </main>
+      {selected && <div className={styles.modalBackdrop} onClick={() => setSelected(null)}><section className={`${styles.modal} ${styles.reportModal}`} role="dialog" aria-modal="true" aria-labelledby="report-detail-title" onClick={(event) => event.stopPropagation()}>
+        <header className={styles.feedbackModalHeader}><h2 id="report-detail-title">Reported Event</h2><button className={styles.feedbackCloseButton} onClick={() => setSelected(null)} aria-label="Close">×</button></header>
+        <div className={styles.feedbackModalBody}>
+          <div className={styles.feedbackPeopleGrid}>
+            <section className={styles.feedbackDetailCard}><h3>TRAINER</h3><p><span>Name</span><strong>{trainerName(selected) || "—"}</strong></p><p><span>Email</span><strong>{selected.trainer?.email || selected.trainerEmail || "—"}</strong></p><p><span>Phone</span><strong>{selected.trainer?.phone || selected.trainerPhone || "—"}</strong></p></section>
+            <section className={styles.feedbackDetailCard}><h3>CUSTOMER</h3><p><span>Name</span><strong>{customerName(selected) || "—"}</strong></p><p><span>Email</span><strong>{selected.customer?.email || selected.customerEmail || "—"}</strong></p><p><span>Phone</span><strong>{selected.customer?.phone || selected.customerPhone || "—"}</strong></p></section>
+          </div>
+          <section className={styles.feedbackDetailCard}><h3>REPORT DETAILS</h3><p><span>Reported By</span><strong>{reportedBy(selected)}</strong></p><p><span>Reason</span><strong>{selected.reason || "—"}</strong></p><p><span>Status</span><strong><span className={`${styles.status} ${styles[`status${titleCase(selected.status).replace(/\s/g, "")}`] || ""}`}>{titleCase(selected.status)}</span></strong></p><p><span>Session Date</span><strong>{prettyDate(selected.booking?.timeSlot?.date || selected.sessionDate || selected.date)}</strong></p><p><span>Session Time</span><strong>{sessionSlot(selected)}</strong></p><p><span>Reported At</span><strong>{prettyDate(selected.createdAt || selected.date)}</strong></p></section>
+          <section className={styles.feedbackDetailCard}><h3>DESCRIPTION</h3><div className={styles.feedbackComment}>{selected.description || "No description provided."}</div></section>
+        </div>
+        <footer className={styles.reportModalFooter}><button onClick={() => setSelected(null)}>Close</button></footer>
+      </section></div>}
+      {selectedCancelled && <div className={styles.modalBackdrop} onClick={() => setSelectedCancelled(null)}><section className={`${styles.modal} ${styles.sessionModal}`} role="dialog" aria-modal="true" aria-labelledby="cancelled-session-title" onClick={(event) => event.stopPropagation()}><button className={styles.closeButton} onClick={() => setSelectedCancelled(null)} aria-label="Close">×</button><h2 id="cancelled-session-title">Cancelled Session Details</h2><div className={styles.sessionDetailGrid}><section className={styles.sessionDetailCard}><h3>CUSTOMER</h3><p><span>Name</span><strong>{selectedCancelled.customer?.name || "—"}</strong></p><p><span>Email</span><strong>{selectedCancelled.customer?.email || "—"}</strong></p><p><span>Phone</span><strong>{selectedCancelled.customer?.phone || "—"}</strong></p></section><section className={styles.sessionDetailCard}><h3>TRAINER</h3><p><span>Name</span><strong>{selectedCancelled.trainer?.name || "—"}</strong></p><p><span>Host Gym</span><strong>{selectedCancelled.trainer?.hostGymName || "—"}</strong></p><p><span>Gym Address</span><strong>{selectedCancelled.trainer?.hostGymAddress || "—"}</strong></p></section><section className={`${styles.sessionDetailCard} ${styles.sessionDetailWide}`}><h3>SESSION DETAILS</h3><p><span>Booking ID</span><strong>{selectedCancelled.bookingId || "—"}</strong></p><p><span>Session Date</span><strong>{prettyDate(selectedCancelled.date)}</strong></p><p><span>Session Time</span><strong>{selectedCancelled.slotTime || "—"}</strong></p><p><span>Cancelled At</span><strong>{prettyDate(selectedCancelled.cancelledAt)}{prettyTime(selectedCancelled.cancelledAt) ? `, ${prettyTime(selectedCancelled.cancelledAt)}` : ""}</strong></p><p><span>Reason</span><strong>{selectedCancelled.reason || "—"}</strong></p></section></div></section></div>}
     </div>
   );
 }
