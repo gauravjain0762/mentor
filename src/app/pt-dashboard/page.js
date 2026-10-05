@@ -20,7 +20,7 @@ export default function PTDashboardPage() {
   const trainers = pts.map((pt) => ({
     id: pt.id,
     name: pt.name,
-    tier: pt.experience > 5 ? "Elite Tier Trainer" : "Pro Tier Trainer",
+    specialization: pt.specialization || "--",
     gym: "Nexus Central Hub",
     location: pt.location || "London, UK",
     // pravatar.cc is a seeded demo avatar service; its images are not trainer photos.
@@ -121,7 +121,7 @@ export default function PTDashboardPage() {
                         </div>
                         <div>
                           <p className={styles.trainerName}>{t.name}</p>
-                          <p className={styles.trainerTier}>{t.tier}</p>
+                          <p className={styles.trainerTier}>{t.specialization}</p>
                         </div>
                       </div>
                     </td>
