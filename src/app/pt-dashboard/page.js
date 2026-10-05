@@ -27,7 +27,7 @@ export default function PTDashboardPage() {
     img: pt.avatar && !pt.avatar.includes("pravatar.cc") ? pt.avatar : null,
     totalClients: pt.totalClients || 0,
     rating: pt.rating || 4.0,
-    status: pt.rating >= 4.5 ? "healthy" : pt.rating >= 4.0 ? "warning" : "critical",
+    status: pt.status === "active" ? "active" : "inactive",
   }));
 
   const stats = {

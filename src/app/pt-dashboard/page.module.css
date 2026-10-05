@@ -272,9 +272,8 @@
   flex-shrink: 0;
   border: 1.5px solid transparent;
 }
-.av_healthy  { border-color: #1a4a2a; }
-.av_warning  { border-color: #3a2e00; }
-.av_critical { border-color: #4a1a1a; }
+.av_active   { border-color: #1a4a2a; }
+.av_inactive { border-color: #4a1a1a; }
 
 .avatarImg {
   width: 38px;
@@ -361,9 +360,8 @@
   height: 10px;
   border-radius: 50%;
 }
-.dot_healthy  { background: #22c55e; }
-.dot_warning  { background: #f8e396; }
-.dot_critical { background: #ff6b6b; }
+.dot_active   { background: #22c55e; }
+.dot_inactive { background: #ff6b6b; }
 
 /* Kebab / actions button */
 .kebabBtn {
