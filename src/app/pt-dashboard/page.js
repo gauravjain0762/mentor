@@ -21,8 +21,8 @@ export default function PTDashboardPage() {
     id: pt.id,
     name: pt.name,
     specialization: pt.specialization || "--",
-    gym: "Nexus Central Hub",
-    location: pt.location || "London, UK",
+    gym: pt.hostGymName || "--",
+    location: pt.hostGymAddress || "--",
     // pravatar.cc is a seeded demo avatar service; its images are not trainer photos.
     img: pt.avatar && !pt.avatar.includes("pravatar.cc") ? pt.avatar : null,
     totalClients: pt.totalClients || 0,
