@@ -13,6 +13,7 @@ const PRIORITY_META = {
   HIGH:     { dot: styles.dotOrange, label: "HIGH" },
   ROUTINE:  { dot: styles.dotGreen,  label: "ROUTINE" },
 };
+const PRIORITY_FALLBACK = { dot: styles.dotGreen, label: "" };
 
 const STATUS_META = {
   OPEN:     styles.statusOpen,
@@ -232,16 +233,16 @@ export default function ReportsPage() {
                         <span className={styles.reporter}>{row.reporterName}</span>
                       </td>
                       <td className={styles.td}>
-                        <span className={`${styles.catBadge} ${CATEGORY_META[row.category]}`}>{row.category}</span>
+                        <span className={`${styles.catBadge} ${CATEGORY_META[row.category] || ""}`}>{row.category}</span>
                       </td>
                       <td className={styles.td}>
                         <div className={styles.priorityCell}>
-                          <span className={`${styles.priorityDot} ${PRIORITY_META[row.priority].dot}`} />
+                          <span className={`${styles.priorityDot} ${(PRIORITY_META[row.priority] || PRIORITY_FALLBACK).dot}`} />
                           <span className={styles.priorityText}>{row.priority}</span>
                         </div>
                       </td>
                       <td className={styles.td}>
-                        <select className={`${styles.statusBadge} ${STATUS_META[row.status]}`} value={row.status} onChange={(e) => handleStatusUpdate(row.id, e.target.value)} style={{ background: "inherit", border: "none", color: "inherit", cursor: "pointer" }}>
+                        <select className={`${styles.statusBadge} ${STATUS_META[row.status] || ""}`} value={row.status} onChange={(e) => handleStatusUpdate(row.id, e.target.value)} style={{ background: "inherit", border: "none", color: "inherit", cursor: "pointer" }}>
                           <option value="OPEN">Open</option>
                           <option value="IN_REVIEW">In Review</option>
                           <option value="RESOLVED">Resolved</option>
